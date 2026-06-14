@@ -33,8 +33,13 @@ jobs:
       - name: Run Unit Tests
         run: flutter test
 
+      - name: Create .env file from secrets
+        run: |
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" > .env
+          echo "SUPABASE_PUBLISHABLE_KEY=${{ secrets.SUPABASE_PUBLISHABLE_KEY }}" >> .env
+
       - name: Build Web Release
-        run: flutter build web --release
+        run: flutter build web --release --dart-define-from-file=.env
 
       - name: Deploy static build to Vercel
         uses: amondnet/vercel-action@v25
