@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:best_ball_madness/screens/auth/auth_screen.dart';
 import 'package:best_ball_madness/providers/auth_providers.dart';
@@ -17,17 +16,14 @@ void main() {
 
   Widget buildTestWidget() {
     return ProviderScope(
-      overrides: [
-        supabaseClientProvider.overrideWithValue(fakeSupabaseClient),
-      ],
-      child: MaterialApp(
-        theme: AppTheme.darkTheme,
-        home: const AuthScreen(),
-      ),
+      overrides: [supabaseClientProvider.overrideWithValue(fakeSupabaseClient)],
+      child: MaterialApp(theme: AppTheme.darkTheme, home: const AuthScreen()),
     );
   }
 
-  testWidgets('AuthScreen renders login by default', (WidgetTester tester) async {
+  testWidgets('AuthScreen renders login by default', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(buildTestWidget());
 
     // Verify Title and Subtitle
@@ -45,7 +41,9 @@ void main() {
     expect(find.widgetWithText(TextButton, 'Sign Up'), findsOneWidget);
   });
 
-  testWidgets('AuthScreen toggles to signup mode and back', (WidgetTester tester) async {
+  testWidgets('AuthScreen toggles to signup mode and back', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(buildTestWidget());
 
     // Tap the switch button to toggle to Sign Up mode
@@ -71,7 +69,9 @@ void main() {
     expect(find.widgetWithText(ElevatedButton, 'Log In'), findsOneWidget);
   });
 
-  testWidgets('AuthScreen shows validation errors for empty fields', (WidgetTester tester) async {
+  testWidgets('AuthScreen shows validation errors for empty fields', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(buildTestWidget());
 
     // Tap Log In button without filling details
@@ -84,7 +84,9 @@ void main() {
     expect(find.text('Please enter your password'), findsOneWidget);
   });
 
-  testWidgets('AuthScreen validates email format and password length', (WidgetTester tester) async {
+  testWidgets('AuthScreen validates email format and password length', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(buildTestWidget());
 
     final emailField = find.widgetWithText(TextFormField, 'Email Address');
@@ -112,7 +114,9 @@ void main() {
     expect(find.text('Password must be at least 6 characters'), findsNothing);
   });
 
-  testWidgets('AuthScreen submits login credentials successfully', (WidgetTester tester) async {
+  testWidgets('AuthScreen submits login credentials successfully', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(buildTestWidget());
 
     final emailField = find.widgetWithText(TextFormField, 'Email Address');
@@ -136,7 +140,9 @@ void main() {
     expect(fakeSupabaseClient.fakeAuth.lastPassword, 'pass12345');
   });
 
-  testWidgets('AuthScreen submits signup credentials successfully', (WidgetTester tester) async {
+  testWidgets('AuthScreen submits signup credentials successfully', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(buildTestWidget());
 
     // Toggle to Sign Up mode

@@ -18,7 +18,9 @@ class AppColors {
 
   // Score Color Constants
   // Eagle or better: score - par <= -2
-  static const Color scoreEagleOrBetterBg = Color(0xFF004D40); // Dark Teal/Green
+  static const Color scoreEagleOrBetterBg = Color(
+    0xFF004D40,
+  ); // Dark Teal/Green
   static const Color scoreEagleOrBetterText = Color(0xFFE0F2F1);
 
   // Birdie: score - par = -1
@@ -34,13 +36,15 @@ class AppColors {
   static const Color scoreBogeyText = Color(0xFFFFEBEE);
 
   // Double Bogey or worse: score - par >= 2
-  static const Color scoreDoubleWorseBg = Color(0xFF7F0000); // Dark Crimson/Burgundy
+  static const Color scoreDoubleWorseBg = Color(
+    0xFF7F0000,
+  ); // Dark Crimson/Burgundy
   static const Color scoreDoubleWorseText = Color(0xFFFFEBEE);
 
   // Status Colors (Badges)
   static const Color statusScheduledBg = Color(0xFF1A237E);
   static const Color statusScheduledText = Color(0xFFE8EAF6);
-  
+
   static const Color statusLiveBg = Color(0xFFE65100);
   static const Color statusLiveText = Color(0xFFFFF3E0);
 

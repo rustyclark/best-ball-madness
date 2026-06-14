@@ -29,7 +29,7 @@ class BbmEmptyState extends StatelessWidget {
             Icon(
               icon,
               size: 64,
-              color: AppColors.textSecondary.withOpacity(0.5),
+              color: AppColors.textSecondary.withValues(alpha: 0.5),
             ),
             const SizedBox(height: AppSpacing.md),
             Text(

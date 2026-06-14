@@ -43,7 +43,10 @@ class AppTheme {
           backgroundColor: AppColors.primary,
           foregroundColor: AppColors.textPrimary,
           elevation: 0,
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
           shape: const RoundedRectangleBorder(
             borderRadius: AppSpacing.borderRadiusMd,
           ),
@@ -54,7 +57,10 @@ class AppTheme {
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.textPrimary,
           side: const BorderSide(color: AppColors.border, width: 1),
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
           shape: const RoundedRectangleBorder(
             borderRadius: AppSpacing.borderRadiusMd,
           ),
@@ -64,7 +70,10 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.cardBg,
-        contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
         border: const OutlineInputBorder(
           borderSide: BorderSide(color: AppColors.border, width: 1),
           borderRadius: AppSpacing.borderRadiusMd,
@@ -81,8 +90,12 @@ class AppTheme {
           borderSide: BorderSide(color: AppColors.scoreBogeyBg, width: 1),
           borderRadius: AppSpacing.borderRadiusMd,
         ),
-        labelStyle: AppTypography.textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
-        hintStyle: AppTypography.textTheme.bodyMedium?.copyWith(color: AppColors.textMuted),
+        labelStyle: AppTypography.textTheme.bodyMedium?.copyWith(
+          color: AppColors.textSecondary,
+        ),
+        hintStyle: AppTypography.textTheme.bodyMedium?.copyWith(
+          color: AppColors.textMuted,
+        ),
       ),
     );
   }

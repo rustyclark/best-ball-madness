@@ -20,7 +20,7 @@ class SetupTeamScreen extends ConsumerStatefulWidget {
 class _SetupTeamScreenState extends ConsumerState<SetupTeamScreen> {
   final _formKey = GlobalKey<FormState>();
   final _teamNameController = TextEditingController();
-  
+
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -46,7 +46,8 @@ class _SetupTeamScreenState extends ConsumerState<SetupTeamScreen> {
 
     if (session == null) {
       setState(() {
-        _errorMessage = 'Authentication session not found. Please log in again.';
+        _errorMessage =
+            'Authentication session not found. Please log in again.';
         _isLoading = false;
       });
       return;
@@ -62,7 +63,8 @@ class _SetupTeamScreenState extends ConsumerState<SetupTeamScreen> {
 
       if (existingNameCheck != null && mounted) {
         setState(() {
-          _errorMessage = 'This team name is already taken. Please choose another one.';
+          _errorMessage =
+              'This team name is already taken. Please choose another one.';
           _isLoading = false;
         });
         return;
@@ -81,7 +83,8 @@ class _SetupTeamScreenState extends ConsumerState<SetupTeamScreen> {
       // 23505 is PostgreSQL code for unique violation
       if (e.code == '23505') {
         setState(() {
-          _errorMessage = 'This team name is already taken. Please choose another one.';
+          _errorMessage =
+              'This team name is already taken. Please choose another one.';
         });
       } else {
         setState(() {
@@ -109,9 +112,9 @@ class _SetupTeamScreenState extends ConsumerState<SetupTeamScreen> {
       await ref.read(supabaseClientProvider).auth.signOut();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to log out: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to log out: $e')));
       }
     } finally {
       if (mounted) {
@@ -134,7 +137,7 @@ class _SetupTeamScreenState extends ConsumerState<SetupTeamScreen> {
             icon: const Icon(Icons.logout),
             onPressed: _isLoading ? null : _logout,
             tooltip: 'Logout',
-          )
+          ),
         ],
       ),
       child: SafeArea(
@@ -184,7 +187,10 @@ class _SetupTeamScreenState extends ConsumerState<SetupTeamScreen> {
                           decoration: const InputDecoration(
                             labelText: 'Team Name',
                             hintText: 'e.g. Green Jacket Chasers',
-                            prefixIcon: Icon(Icons.shield_outlined, color: AppColors.textSecondary),
+                            prefixIcon: Icon(
+                              Icons.shield_outlined,
+                              color: AppColors.textSecondary,
+                            ),
                           ),
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
@@ -207,8 +213,13 @@ class _SetupTeamScreenState extends ConsumerState<SetupTeamScreen> {
                           Container(
                             padding: const EdgeInsets.all(AppSpacing.sm),
                             decoration: BoxDecoration(
-                              color: AppColors.scoreBogeyBg.withOpacity(0.1),
-                              border: Border.all(color: AppColors.scoreBogeyBg, width: 1),
+                              color: AppColors.scoreBogeyBg.withValues(
+                                alpha: 0.1,
+                              ),
+                              border: Border.all(
+                                color: AppColors.scoreBogeyBg,
+                                width: 1,
+                              ),
                               borderRadius: AppSpacing.borderRadiusMd,
                             ),
                             child: Text(

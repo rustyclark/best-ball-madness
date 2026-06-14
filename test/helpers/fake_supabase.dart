@@ -6,11 +6,11 @@ class FakeGoTrueClient extends Fake implements GoTrueClient {
   final _authStateController = StreamController<AuthState>.broadcast();
   Session? _currentSession;
   User? _currentUser;
-  
+
   bool loginCalled = false;
   bool signUpCalled = false;
   bool signOutCalled = false;
-  
+
   String? lastEmail;
   String? lastPassword;
 
@@ -37,13 +37,13 @@ class FakeGoTrueClient extends Fake implements GoTrueClient {
   @override
   dynamic noSuchMethod(Invocation invocation) {
     final name = invocation.memberName;
-    
+
     if (name == #signInWithPassword) {
       loginCalled = true;
       final args = invocation.namedArguments;
       lastEmail = args[#email] as String?;
       lastPassword = args[#password] as String?;
-      
+
       final mockUser = User(
         id: 'mock-user-id',
         appMetadata: {},
@@ -57,13 +57,13 @@ class FakeGoTrueClient extends Fake implements GoTrueClient {
         tokenType: 'bearer',
         user: mockUser,
       );
-      
+
       return Future.delayed(const Duration(milliseconds: 50), () {
         emitSession(mockSession);
         return AuthResponse(session: mockSession, user: mockUser);
       });
     }
-    
+
     if (name == #signUp) {
       signUpCalled = true;
       final args = invocation.namedArguments;
@@ -89,18 +89,19 @@ class FakeGoTrueClient extends Fake implements GoTrueClient {
         return AuthResponse(session: mockSession, user: mockUser);
       });
     }
-    
+
     if (name == #signOut) {
       signOutCalled = true;
       emitSession(null);
       return Future.value();
     }
-    
+
     return super.noSuchMethod(invocation);
   }
 }
 
-class FakePostgrestTransformBuilder<T> extends Fake implements PostgrestTransformBuilder<T> {
+class FakePostgrestTransformBuilder<T> extends Fake
+    implements PostgrestTransformBuilder<T> {
   final Future<T> _future;
   FakePostgrestTransformBuilder(this._future);
 
@@ -110,7 +111,8 @@ class FakePostgrestTransformBuilder<T> extends Fake implements PostgrestTransfor
   }
 }
 
-class FakePostgrestFilterBuilder<T> extends Fake implements PostgrestFilterBuilder<T> {
+class FakePostgrestFilterBuilder<T> extends Fake
+    implements PostgrestFilterBuilder<T> {
   final Future<T> _future;
   FakePostgrestFilterBuilder(this._future);
 
@@ -151,7 +153,9 @@ class FakeSupabaseQueryBuilder extends Fake implements SupabaseQueryBuilder {
   FakeSupabaseQueryBuilder({this.selectResult = const [], this.onInsert});
 
   @override
-  PostgrestFilterBuilder<List<Map<String, dynamic>>> select([String columns = '*']) {
+  PostgrestFilterBuilder<List<Map<String, dynamic>>> select([
+    String columns = '*',
+  ]) {
     return FakePostgrestFilterBuilder<List<Map<String, dynamic>>>(
       Future.value(selectResult),
     );
@@ -165,7 +169,9 @@ class FakeSupabaseQueryBuilder extends Fake implements SupabaseQueryBuilder {
     if (onInsert != null && values is Map<String, dynamic>) {
       onInsert!(values);
     }
-    final insertedMap = values is Map<String, dynamic> ? values : <String, dynamic>{};
+    final insertedMap = values is Map<String, dynamic>
+        ? values
+        : <String, dynamic>{};
     return FakePostgrestFilterBuilder<Map<String, dynamic>>(
       Future.value(insertedMap),
     );

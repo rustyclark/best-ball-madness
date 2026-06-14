@@ -20,7 +20,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  
+
   bool _isSignUp = false;
   bool _isLoading = false;
   String? _errorMessage;
@@ -59,7 +59,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           }
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Registration successful! Please complete your profile.'),
+              content: Text(
+                'Registration successful! Please complete your profile.',
+              ),
               backgroundColor: AppColors.primary,
             ),
           );
@@ -71,7 +73,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           password: password,
         );
         if (mounted && response.user == null) {
-          throw const AuthException('Log in failed. Please check your credentials.');
+          throw const AuthException(
+            'Log in failed. Please check your credentials.',
+          );
         }
       }
     } on AuthException catch (e) {
@@ -129,8 +133,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  _isSignUp 
-                      ? 'Create your account to start drafting' 
+                  _isSignUp
+                      ? 'Create your account to start drafting'
                       : 'Sign in to manage your golf rosters',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: AppColors.textSecondary,
@@ -164,7 +168,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                           keyboardType: TextInputType.emailAddress,
                           decoration: const InputDecoration(
                             labelText: 'Email Address',
-                            prefixIcon: Icon(Icons.email_outlined, color: AppColors.textSecondary),
+                            prefixIcon: Icon(
+                              Icons.email_outlined,
+                              color: AppColors.textSecondary,
+                            ),
                           ),
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
@@ -185,7 +192,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                           obscureText: true,
                           decoration: const InputDecoration(
                             labelText: 'Password',
-                            prefixIcon: Icon(Icons.lock_outlined, color: AppColors.textSecondary),
+                            prefixIcon: Icon(
+                              Icons.lock_outlined,
+                              color: AppColors.textSecondary,
+                            ),
                           ),
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
@@ -204,8 +214,13 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                           Container(
                             padding: const EdgeInsets.all(AppSpacing.sm),
                             decoration: BoxDecoration(
-                              color: AppColors.scoreBogeyBg.withOpacity(0.1),
-                              border: Border.all(color: AppColors.scoreBogeyBg, width: 1),
+                              color: AppColors.scoreBogeyBg.withValues(
+                                alpha: 0.1,
+                              ),
+                              border: Border.all(
+                                color: AppColors.scoreBogeyBg,
+                                width: 1,
+                              ),
                               borderRadius: AppSpacing.borderRadiusMd,
                             ),
                             child: Text(
@@ -235,8 +250,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     Text(
-                      _isSignUp 
-                          ? 'Already have an account? ' 
+                      _isSignUp
+                          ? 'Already have an account? '
                           : "Don't have an account? ",
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: AppColors.textSecondary,

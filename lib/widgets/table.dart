@@ -20,8 +20,8 @@ class BbmTable extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final double tableWidth = constraints.maxWidth > minWidth 
-            ? constraints.maxWidth 
+        final double tableWidth = constraints.maxWidth > minWidth
+            ? constraints.maxWidth
             : minWidth;
 
         Widget tableContent = SizedBox(
