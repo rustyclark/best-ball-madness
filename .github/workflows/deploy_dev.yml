@@ -1,9 +1,9 @@
-name: Deploy Production Web App
+name: Deploy Development Web App
 
 on:
   push:
     branches:
-      - main
+      - develop
 
 jobs:
   deploy:
@@ -35,17 +35,16 @@ jobs:
 
       - name: Create .env file from secrets
         run: |
-          echo "SUPABASE_URL=${{ secrets.SUPABASE_PROD_URL }}" > .env
-          echo "SUPABASE_PUBLISHABLE_KEY=${{ secrets.SUPABASE_PROD_PUBLISHABLE_KEY }}" >> .env
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_DEV_URL }}" > .env
+          echo "SUPABASE_PUBLISHABLE_KEY=${{ secrets.SUPABASE_DEV_PUBLISHABLE_KEY }}" >> .env
 
       - name: Build Web Release
         run: flutter build web --release --dart-define-from-file=.env
 
-      - name: Deploy static build to Vercel
+      - name: Deploy static build to Vercel (Staging/Preview)
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod'
           working-directory: './build/web'
