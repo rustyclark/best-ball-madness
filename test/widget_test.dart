@@ -3,13 +3,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:best_ball_madness/main.dart';
+import 'package:best_ball_madness/theme/theme.dart';
 
 void main() {
   testWidgets('Design system gallery smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame, wrapped in ProviderScope as required by Riverpod.
     await tester.pumpWidget(
-      const ProviderScope(
-        child: MyApp(),
+      ProviderScope(
+        child: MaterialApp(
+          theme: AppTheme.darkTheme,
+          home: const DesignSystemGallery(),
+        ),
       ),
     );
 

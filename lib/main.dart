@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'providers/auth_providers.dart';
+import 'screens/auth/auth_screen.dart';
+import 'screens/auth/setup_team_screen.dart';
+import 'screens/dashboard/dashboard_screen.dart';
 import 'theme/colors.dart';
 import 'theme/spacing.dart';
 import 'theme/theme.dart';
@@ -28,21 +32,85 @@ void main() async {
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp(
       title: 'Best Ball Madness',
       theme: AppTheme.darkTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.dark,
       debugShowCheckedModeBanner: false,
-      home: const DesignSystemGallery(),
+      home: const NavigationSwitcher(),
     );
   }
 }
+
+class NavigationSwitcher extends ConsumerWidget {
+  const NavigationSwitcher({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sessionAsync = ref.watch(authSessionProvider);
+
+    return sessionAsync.when(
+      data: (session) {
+        if (session == null) {
+          return const AuthScreen();
+        }
+
+        final profileAsync = ref.watch(userProfileProvider);
+
+        return profileAsync.when(
+          data: (profile) {
+            if (profile == null) {
+              return const SetupTeamScreen();
+            }
+            return DashboardScreen(
+              onViewDesignSystem: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const DesignSystemGallery(),
+                  ),
+                );
+              },
+            );
+          },
+          loading: () => const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            ),
+          ),
+          error: (err, stack) => Scaffold(
+            body: Center(
+              child: Text(
+                'Error loading profile: $err',
+                style: const TextStyle(color: AppColors.scoreBogeyBg),
+              ),
+            ),
+          ),
+        );
+      },
+      loading: () => const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
+      ),
+      error: (err, stack) => Scaffold(
+        body: Center(
+          child: Text(
+            'Error checking authentication: $err',
+            style: const TextStyle(color: AppColors.scoreBogeyBg),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 
 class DesignSystemGallery extends StatelessWidget {
   const DesignSystemGallery({super.key});
