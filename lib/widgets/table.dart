@@ -84,36 +84,50 @@ class BbmTableRow extends StatelessWidget {
   final List<Widget> cells;
   final List<double> columnWidths;
   final VoidCallback? onTap;
+  final Color? backgroundColor;
 
   const BbmTableRow({
     super.key,
     required this.cells,
     required this.columnWidths,
     this.onTap,
+    this.backgroundColor,
   });
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final double rowWidth = constraints.maxWidth;
-            final double sumRatio = columnWidths.reduce((a, b) => a + b);
-            return Row(
-              children: List.generate(
-                cells.length,
-                (index) => SizedBox(
-                  width: (columnWidths[index] / sumRatio) * rowWidth,
-                  child: cells[index],
-                ),
+    Widget rowContent = Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final double rowWidth = constraints.maxWidth;
+          final double sumRatio = columnWidths.reduce((a, b) => a + b);
+          return Row(
+            children: List.generate(
+              cells.length,
+              (index) => SizedBox(
+                width: (columnWidths[index] / sumRatio) * rowWidth,
+                child: cells[index],
               ),
-            );
-          },
-        ),
+            ),
+          );
+        },
       ),
+    );
+
+    if (onTap != null) {
+      return Material(
+        color: backgroundColor ?? Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          child: rowContent,
+        ),
+      );
+    }
+
+    return Container(
+      color: backgroundColor,
+      child: rowContent,
     );
   }
 }

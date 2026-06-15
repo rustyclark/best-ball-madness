@@ -30,7 +30,7 @@ class LeaderboardScreen extends ConsumerWidget {
         vertical: AppSpacing.sm,
         horizontal: AppSpacing.md,
       ),
-      color: textColor.withOpacity(0.08),
+      color: textColor.withValues(alpha: 0.08),
       width: double.infinity,
       alignment: Alignment.centerLeft,
       child: Text(

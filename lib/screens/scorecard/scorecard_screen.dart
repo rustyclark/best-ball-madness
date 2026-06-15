@@ -10,67 +10,7 @@ import '../../widgets/card.dart';
 import '../../widgets/responsive_layout.dart';
 import '../../widgets/table.dart';
 
-/// Helper mapping cell scores to global AppColors based on score_type or math.
-class ColorPair {
-  final Color bg;
-  final Color text;
-  const ColorPair(this.bg, this.text);
-}
-
-ColorPair getScoreColors(int? score, int par, [String? scoreType]) {
-  if (score == null) {
-    return const ColorPair(AppColors.cardBg, AppColors.textPrimary);
-  }
-
-  final diff = score - par;
-  final type = scoreType ?? _getScoreTypeFromDiff(diff);
-
-  switch (type.toUpperCase()) {
-    case 'EAGLE':
-    case 'DOUBLE_EAGLE':
-    case 'ALBATROSS':
-      return const ColorPair(AppColors.scoreEagleOrBetterBg, AppColors.scoreEagleOrBetterText);
-    case 'BIRDIE':
-      return const ColorPair(AppColors.scoreBirdieBg, AppColors.scoreBirdieText);
-    case 'PAR':
-      return const ColorPair(AppColors.scoreParBg, AppColors.scoreParText);
-    case 'BOGEY':
-      return const ColorPair(AppColors.scoreBogeyBg, AppColors.scoreBogeyText);
-    case 'DOUBLE_BOGEY':
-    case 'DOUBLE_BOGEY_OR_WORSE':
-      return const ColorPair(AppColors.scoreDoubleWorseBg, AppColors.scoreDoubleWorseText);
-    default:
-      if (diff <= -2) {
-        return const ColorPair(AppColors.scoreEagleOrBetterBg, AppColors.scoreEagleOrBetterText);
-      } else if (diff == -1) {
-        return const ColorPair(AppColors.scoreBirdieBg, AppColors.scoreBirdieText);
-      } else if (diff == 0) {
-        return const ColorPair(AppColors.scoreParBg, AppColors.scoreParText);
-      } else if (diff == 1) {
-        return const ColorPair(AppColors.scoreBogeyBg, AppColors.scoreBogeyText);
-      } else {
-        return const ColorPair(AppColors.scoreDoubleWorseBg, AppColors.scoreDoubleWorseText);
-      }
-  }
-}
-
-String _getScoreTypeFromDiff(int diff) {
-  if (diff <= -2) return 'EAGLE';
-  if (diff == -1) return 'BIRDIE';
-  if (diff == 0) return 'PAR';
-  if (diff == 1) return 'BOGEY';
-  return 'DOUBLE_BOGEY';
-}
-
-/// Helper function to format tee times into display local time (e.g. 10:30 AM)
-String formatTeeTime(DateTime dateTime) {
-  final localTime = dateTime.toLocal();
-  final hour = localTime.hour;
-  final minute = localTime.minute.toString().padLeft(2, '0');
-  final period = hour >= 12 ? 'PM' : 'AM';
-  final displayHour = hour % 12 == 0 ? 12 : hour % 12;
-  return '$displayHour:$minute $period';
-}
+import '../../utils/score_utils.dart';
 
 /// Interactive scorecard cell displaying a golfer's score, with a realtime green pulse animation.
 class ScorecardCell extends ConsumerStatefulWidget {
@@ -350,7 +290,9 @@ class ScorecardScreen extends ConsumerWidget {
                                 headers: _buildTableHeaders(theme),
                                 rows: [
                                   // Golfer rows
-                                  ...teamGolfers.map((golfer) {
+                                  ...teamGolfers.asMap().entries.map((entry) {
+                                    final index = entry.key;
+                                    final golfer = entry.value;
                                     final golferScores = scores
                                         .where((s) => s.tournamentGolferId == golfer.id)
                                         .toList();
@@ -361,6 +303,9 @@ class ScorecardScreen extends ConsumerWidget {
                                       teamScores: teamScores,
                                       allScores: scores,
                                       theme: theme,
+                                      backgroundColor: index % 2 == 1
+                                          ? AppColors.alternateRow
+                                          : Colors.transparent,
                                     );
                                   }),
 
@@ -372,6 +317,7 @@ class ScorecardScreen extends ConsumerWidget {
                                     teamScores: teamScores,
                                     allScores: scores,
                                     theme: theme,
+                                    backgroundColor: AppColors.primary.withValues(alpha: 0.05),
                                   ),
                                 ],
                               );
@@ -619,6 +565,7 @@ class ScorecardScreen extends ConsumerWidget {
     required List<TeamHoleScore> teamScores,
     required List<HoleScore> allScores,
     required ThemeData theme,
+    required Color backgroundColor,
   }) {
     int roundTotal = 0;
     bool hasScores = false;
@@ -633,6 +580,7 @@ class ScorecardScreen extends ConsumerWidget {
         ...List.generate(18, (_) => 1.0),
         1.5,
       ],
+      backgroundColor: backgroundColor,
       cells: [
         // Name & Status
         Padding(
@@ -688,6 +636,7 @@ class ScorecardScreen extends ConsumerWidget {
     required List<TeamHoleScore> teamScores,
     required List<HoleScore> allScores,
     required ThemeData theme,
+    required Color backgroundColor,
   }) {
     int teamRoundTotal = 0;
     bool teamHasScores = false;
@@ -703,6 +652,7 @@ class ScorecardScreen extends ConsumerWidget {
         ...List.generate(18, (_) => 1.0),
         1.5,
       ],
+      backgroundColor: backgroundColor,
       cells: [
         // Team Row Title
         Padding(

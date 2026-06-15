@@ -15,9 +15,7 @@ import '../scorecard/scorecard_screen.dart';
 import '../leaderboard/leaderboard_screen.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
-  final VoidCallback onViewDesignSystem;
-
-  const DashboardScreen({super.key, required this.onViewDesignSystem});
+  const DashboardScreen({super.key});
 
   @override
   ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
@@ -352,21 +350,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 },
                 loading: () => const SizedBox.shrink(),
                 error: (err, stack) => const SizedBox.shrink(),
-              ),
-              const SizedBox(height: AppSpacing.md),
-
-              // Developer Actions / Design System
-              BbmCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    BbmButton.outlined(
-                      text: 'View Design System Gallery',
-                      icon: Icons.palette_outlined,
-                      onPressed: widget.onViewDesignSystem,
-                    ),
-                  ],
-                ),
               ),
             ],
           ),

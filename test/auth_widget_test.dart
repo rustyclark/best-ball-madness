@@ -17,7 +17,7 @@ void main() {
   Widget buildTestWidget() {
     return ProviderScope(
       overrides: [supabaseClientProvider.overrideWithValue(fakeSupabaseClient)],
-      child: MaterialApp(theme: AppTheme.darkTheme, home: const AuthScreen()),
+      child: MaterialApp(theme: AppTheme.lightTheme, home: const AuthScreen()),
     );
   }
 

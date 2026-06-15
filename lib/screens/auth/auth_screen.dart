@@ -95,6 +95,48 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     }
   }
 
+  Future<void> _resetPassword() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty || !email.contains('@')) {
+      setState(() {
+        _errorMessage = 'Please enter a valid email address to reset password.';
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final client = ref.read(supabaseClientProvider);
+      await client.auth.resetPasswordForEmail(email);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Password reset link sent to your email.'),
+            backgroundColor: AppColors.primary,
+          ),
+        );
+      }
+    } on AuthException catch (e) {
+      setState(() {
+        _errorMessage = e.message;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'An unexpected error occurred: $e';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   void _toggleMode() {
     setState(() {
       _isSignUp = !_isSignUp;
@@ -207,6 +249,16 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                             return null;
                           },
                         ),
+                        if (!_isSignUp) ...[
+                          const SizedBox(height: AppSpacing.xs),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: BbmButton.text(
+                              text: 'Forgot Password?',
+                              onPressed: _isLoading ? null : _resetPassword,
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: AppSpacing.lg),
 
                         // Error Banner
