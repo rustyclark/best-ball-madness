@@ -11,6 +11,8 @@ import '../../widgets/draft_panel.dart';
 import '../../widgets/golfer_table.dart';
 import '../../widgets/responsive_layout.dart';
 import '../../widgets/tournament_header.dart';
+import '../scorecard/scorecard_screen.dart';
+import '../leaderboard/leaderboard_screen.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   final VoidCallback onViewDesignSystem;
@@ -147,33 +149,35 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               const TournamentHeader(),
               const SizedBox(height: AppSpacing.md),
 
+              // Weather Delay Banner
+              if (activeTournament?.status == 'SUSPENDED') ...[
+                _buildBanner(
+                  text: 'WEATHER DELAY: Play is currently suspended.',
+                  bgColor: AppColors.statusSuspendedBg,
+                  textColor: AppColors.statusSuspendedText,
+                  icon: Icons.thunderstorm_outlined,
+                ),
+                const SizedBox(height: AppSpacing.md),
+              ],
+
+              // Lock Time Banner (Post-lock only)
+              if (isLocked && activeTournament?.lockTimeUtc != null) ...[
+                _buildBanner(
+                  text: 'Drafting has closed. Roster locked on ${formatLockTime(activeTournament!.lockTimeUtc!)}.',
+                  bgColor: AppColors.border,
+                  textColor: AppColors.textSecondary,
+                  icon: Icons.lock_clock,
+                ),
+                const SizedBox(height: AppSpacing.md),
+              ],
+
               // WD Warning Banner (Pre-lock only)
               if (showWdBanner) ...[
-                Container(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  decoration: BoxDecoration(
-                    color: Colors.amber.withValues(alpha: 0.1),
-                    border: Border.all(color: Colors.amber, width: 1),
-                    borderRadius: AppSpacing.borderRadiusMd,
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.warning_amber_rounded,
-                        color: Colors.amber,
-                      ),
-                      const SizedBox(width: AppSpacing.md),
-                      Expanded(
-                        child: Text(
-                          'WARNING: A golfer on your team has withdrawn (WD). Please update your roster before lock time!',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: Colors.amber,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                _buildBanner(
+                  text: 'WARNING: A golfer on your team has withdrawn (WD). Please update your roster before lock time!',
+                  bgColor: Colors.amber,
+                  textColor: Colors.amber,
+                  icon: Icons.warning_amber_rounded,
                 ),
                 const SizedBox(height: AppSpacing.md),
               ],
@@ -182,6 +186,105 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               if (activeTournament != null) ...[
                 // Draft Panel
                 DraftPanel(isLocked: isLocked),
+                const SizedBox(height: AppSpacing.md),
+
+                if (userTeam != null) ...[
+                  BbmCard(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ScorecardScreen(),
+                        ),
+                      );
+                    },
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.analytics_outlined,
+                          color: AppColors.primary,
+                          size: 24,
+                        ),
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'VIEW LIVE SCORECARD',
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Track your team\'s hole-by-hole scores in real-time.',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(
+                          Icons.arrow_forward_ios,
+                          size: 16,
+                          color: AppColors.primary,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                ],
+
+                // Leaderboard card
+                BbmCard(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const LeaderboardScreen(),
+                      ),
+                    );
+                  },
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.leaderboard_outlined,
+                        color: AppColors.primary,
+                        size: 24,
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'VIEW LEADERBOARD',
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'See overall standings and compare with other teams.',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(
+                        Icons.arrow_forward_ios,
+                        size: 16,
+                        color: AppColors.primary,
+                      ),
+                    ],
+                  ),
+                ),
                 const SizedBox(height: AppSpacing.md),
 
                 // Golfer Table
@@ -282,14 +385,67 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             color: AppColors.textSecondary,
           ),
         ),
-        Text(
-          value,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
+        const SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: Text(
+            value,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+            textAlign: TextAlign.end,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ],
     );
   }
+
+  Widget _buildBanner({
+    required String text,
+    required Color bgColor,
+    required Color textColor,
+    required IconData icon,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: bgColor.withValues(alpha: 0.15),
+        border: Border.all(color: bgColor, width: 1.5),
+        borderRadius: AppSpacing.borderRadiusMd,
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: bgColor),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                color: textColor,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+String formatLockTime(DateTime dateTime) {
+  final localTime = dateTime.toLocal();
+  final hour = localTime.hour;
+  final minute = localTime.minute.toString().padLeft(2, '0');
+  final period = hour >= 12 ? 'PM' : 'AM';
+  final displayHour = hour % 12 == 0 ? 12 : hour % 12;
+
+  final months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+  ];
+  final month = months[localTime.month - 1];
+  final day = localTime.day;
+
+  return '$month $day at $displayHour:$minute $period';
 }

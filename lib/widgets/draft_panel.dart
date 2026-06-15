@@ -72,8 +72,11 @@ class _DraftPanelState extends ConsumerState<DraftPanel> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.xs,
             children: [
               Text(
                 'YOUR ROSTER',
@@ -84,6 +87,7 @@ class _DraftPanelState extends ConsumerState<DraftPanel> {
                 ),
               ),
               Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     'REMAINING BUDGET: ',

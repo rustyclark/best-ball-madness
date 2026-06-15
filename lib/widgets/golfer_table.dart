@@ -21,6 +21,7 @@ class GolferTable extends ConsumerStatefulWidget {
 class _GolferTableState extends ConsumerState<GolferTable> {
   GolferSortColumn _sortBy = GolferSortColumn.price;
   bool _ascending = false; // default price desc
+  int _currentPage = 0;
 
   List<TournamentGolfer> _getSortedGolfers() {
     final list = List<TournamentGolfer>.from(widget.golfers);
@@ -70,6 +71,7 @@ class _GolferTableState extends ConsumerState<GolferTable> {
     return InkWell(
       onTap: () {
         setState(() {
+          _currentPage = 0;
           if (_sortBy == column) {
             _ascending = !_ascending;
           } else {
@@ -86,18 +88,22 @@ class _GolferTableState extends ConsumerState<GolferTable> {
               ? MainAxisAlignment.start
               : MainAxisAlignment.end,
           children: [
-            Text(
-              label,
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: isSorted ? AppColors.primary : AppColors.textSecondary,
-                fontWeight: FontWeight.bold,
+            Flexible(
+              child: Text(
+                label,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: isSorted ? AppColors.primary : AppColors.textSecondary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 11,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
             if (isSorted) ...[
               const SizedBox(width: 2),
               Icon(
                 _ascending ? Icons.arrow_upward : Icons.arrow_downward,
-                size: 14,
+                size: 11,
                 color: AppColors.primary,
               ),
             ],
@@ -115,7 +121,22 @@ class _GolferTableState extends ConsumerState<GolferTable> {
 
     const columnWidths = [2.5, 1.2, 0.8, 1.0, 1.8, 1.5];
 
-    return BbmTable(
+    final int itemsPerPage = 50;
+    final int totalItems = sortedGolfers.length;
+    final int totalPages = (totalItems / itemsPerPage).ceil();
+
+    if (_currentPage >= totalPages && totalPages > 0) {
+      _currentPage = totalPages - 1;
+    }
+
+    final int startIndex = _currentPage * itemsPerPage;
+    final int endIndex = (startIndex + itemsPerPage) > totalItems ? totalItems : (startIndex + itemsPerPage);
+
+    final paginatedGolfers = totalItems > 0
+        ? sortedGolfers.sublist(startIndex, endIndex)
+        : <TournamentGolfer>[];
+
+    final tableWidget = BbmTable(
       minWidth: 600.0,
       columnWidths: columnWidths,
       headers: [
@@ -144,7 +165,7 @@ class _GolferTableState extends ConsumerState<GolferTable> {
           ),
         ),
       ],
-      rows: sortedGolfers.map((golfer) {
+      rows: paginatedGolfers.map((golfer) {
         final isSelected = selectedGolfers.any((g) => g.id == golfer.id);
 
         final String statsText =
@@ -304,6 +325,47 @@ class _GolferTableState extends ConsumerState<GolferTable> {
           ],
         );
       }).toList(),
+    );
+
+    if (totalPages <= 1) {
+      return tableWidget;
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        tableWidget,
+        const SizedBox(height: AppSpacing.md),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.chevron_left, color: AppColors.primary),
+              onPressed: _currentPage > 0
+                  ? () => setState(() => _currentPage--)
+                  : null,
+              tooltip: 'Previous Page',
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Text(
+              'PAGE ${_currentPage + 1} OF $totalPages',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: AppColors.textSecondary,
+                letterSpacing: 1.0,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            IconButton(
+              icon: const Icon(Icons.chevron_right, color: AppColors.primary),
+              onPressed: _currentPage < totalPages - 1
+                  ? () => setState(() => _currentPage++)
+                  : null,
+              tooltip: 'Next Page',
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

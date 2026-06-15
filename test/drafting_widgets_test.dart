@@ -359,6 +359,67 @@ void main() {
     expect(find.text('Tiger Woods'), findsOneWidget);
     expect(find.text('WD'), findsOneWidget);
   });
+
+  testWidgets('GolferTable limits display to 50 golfers and renders pagination controls', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(800, 5000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final manyGolfers = List.generate(55, (index) {
+      return TournamentGolfer(
+        id: 'tg-$index',
+        tournamentId: 't-1',
+        golferProfileId: 'gp-$index',
+        price: 20.00,
+        status: 'ACTIVE',
+        profile: GolferProfile(
+          id: 'gp-$index',
+          espnId: '$index',
+          name: 'Golfer Name $index',
+        ),
+      );
+    });
+
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(
+            body: GolferTable(golfers: manyGolfers, isLocked: false),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    // Verify page text is shown
+    expect(find.text('PAGE 1 OF 2'), findsOneWidget);
+
+    // Verify first golfer is shown
+    expect(find.text('Golfer Name 0'), findsOneWidget);
+
+    // Verify 50th golfer (index 49) is shown
+    expect(find.text('Golfer Name 49'), findsOneWidget);
+
+    // Verify 51st golfer (index 50) is NOT shown (since it's on page 2)
+    expect(find.text('Golfer Name 50'), findsNothing);
+
+    // Tap Next Page button
+    final nextBtn = find.byTooltip('Next Page');
+    expect(nextBtn, findsOneWidget);
+    await tester.tap(nextBtn);
+    await tester.pumpAndSettle();
+
+    // Verify page text updated
+    expect(find.text('PAGE 2 OF 2'), findsOneWidget);
+
+    // Verify 51st golfer (index 50) is now shown
+    expect(find.text('Golfer Name 50'), findsOneWidget);
+
+    // Verify first golfer (index 0) is now gone
+    expect(find.text('Golfer Name 0'), findsNothing);
+  });
 }
 
 class TestDraftStateNotifier extends DraftStateNotifier {

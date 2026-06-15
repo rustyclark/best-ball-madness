@@ -26,9 +26,33 @@ class FakeGoTrueClient extends Fake implements GoTrueClient {
   User? get currentUser => _currentUser;
 
   @override
-  Stream<AuthState> get onAuthStateChange => _authStateController.stream;
+  Stream<AuthState> get onAuthStateChange {
+    print("onAuthStateChange: getter called");
+    final controller = StreamController<AuthState>.broadcast();
+    scheduleMicrotask(() {
+      if (!controller.isClosed) {
+        print("onAuthStateChange: emitting initialSession = ${_currentSession?.user?.email}");
+        controller.add(AuthState(AuthChangeEvent.initialSession, _currentSession));
+      }
+    });
+    final sub = _authStateController.stream.listen(
+      (event) => {
+        print("onAuthStateChange: forwarding event = ${event.event}, session = ${event.session?.user?.email}"),
+        controller.add(event)
+      },
+      onError: (err) => controller.addError(err),
+      onDone: () => controller.close(),
+    );
+    controller.onCancel = () {
+      print("onAuthStateChange: stream cancelled");
+      sub.cancel();
+      controller.close();
+    };
+    return controller.stream;
+  }
 
   void emitSession(Session? session) {
+    print("emitSession called with session = ${session?.user?.email}");
     _currentSession = session;
     _currentUser = session?.user;
     _authStateController.add(AuthState(AuthChangeEvent.signedIn, session));
@@ -127,6 +151,11 @@ class FakePostgrestFilterBuilder<T> extends Fake
   }
 
   @override
+  PostgrestFilterBuilder<T> inFilter(String column, List values) {
+    return this;
+  }
+
+  @override
   PostgrestTransformBuilder<Map<String, dynamic>?> maybeSingle() {
     final Future<Map<String, dynamic>?> mappedFuture = _future.then((value) {
       if (value is List && value.isNotEmpty) {
@@ -182,6 +211,7 @@ class FakeSupabaseClient extends Fake implements SupabaseClient {
   final FakeGoTrueClient fakeAuth;
   final Map<String, List<Map<String, dynamic>>> mockData;
   final Function(String table, Map<String, dynamic> row)? onInsert;
+  final List<FakeRealtimeChannel> activeChannels = [];
 
   FakeSupabaseClient({
     FakeGoTrueClient? auth,
@@ -203,4 +233,95 @@ class FakeSupabaseClient extends Fake implements SupabaseClient {
       },
     );
   }
+
+  @override
+  RealtimeChannel channel(String name, {RealtimeChannelConfig opts = const RealtimeChannelConfig()}) {
+    final ch = FakeRealtimeChannel(name);
+    activeChannels.add(ch);
+    return ch;
+  }
+
+  @override
+  Future<String> removeChannel(RealtimeChannel channel) async {
+    activeChannels.remove(channel as FakeRealtimeChannel);
+    return 'ok';
+  }
 }
+
+class FakeRealtimeChannel extends Fake implements RealtimeChannel {
+  final String name;
+  final List<void Function(PostgresChangePayload)> postgresChangesCallbacks = [];
+
+  FakeRealtimeChannel(this.name);
+
+  @override
+  RealtimeChannel onPostgresChanges({
+    required PostgresChangeEvent event,
+    String? schema,
+    String? table,
+    PostgresChangeFilter? filter,
+    required void Function(PostgresChangePayload payload) callback,
+  }) {
+    postgresChangesCallbacks.add(callback);
+    return this;
+  }
+
+  @override
+  RealtimeChannel subscribe([
+    void Function(RealtimeSubscribeStatus status, Object? error)? callback,
+    Duration? timeout,
+  ]) {
+    if (callback != null) {
+      callback(RealtimeSubscribeStatus.subscribed, null);
+    }
+    return this;
+  }
+
+
+  @override
+  Future<String> unsubscribe([Duration? timeout]) async {
+    return 'ok';
+  }
+
+  void triggerPostgresChange({
+    required PostgresChangeEvent event,
+    required String schema,
+    required String table,
+    required Map<String, dynamic> newRecord,
+    required Map<String, dynamic> oldRecord,
+  }) {
+    final payload = FakePostgresChangesPayload(
+      eventType: event,
+      schema: schema,
+      table: table,
+      newRecord: newRecord,
+      oldRecord: oldRecord,
+    );
+    for (final cb in postgresChangesCallbacks) {
+      cb(payload);
+    }
+  }
+}
+
+class FakePostgresChangesPayload extends Fake implements PostgresChangePayload {
+  @override
+  final PostgresChangeEvent eventType;
+  @override
+  final String schema;
+  @override
+  final String table;
+  @override
+  final Map<String, dynamic> newRecord;
+  @override
+  final Map<String, dynamic> oldRecord;
+
+  FakePostgresChangesPayload({
+    required this.eventType,
+    required this.schema,
+    required this.table,
+    required this.newRecord,
+    required this.oldRecord,
+  });
+}
+
+

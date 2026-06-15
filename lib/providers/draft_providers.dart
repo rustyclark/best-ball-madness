@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'auth_providers.dart';
 
 /// Model representing a tournament.
@@ -155,6 +156,7 @@ class UserTeam {
   final String tournamentId;
   final String status;
   final List<String> golferIds;
+  final String? teamName;
 
   UserTeam({
     required this.id,
@@ -162,21 +164,27 @@ class UserTeam {
     required this.tournamentId,
     required this.status,
     required this.golferIds,
+    this.teamName,
   });
 
   factory UserTeam.fromJson(Map<String, dynamic> json, List<String> golferIds) {
+    String? teamName;
+    if (json['users'] != null && json['users'] is Map) {
+      teamName = json['users']['team_name'] as String?;
+    }
     return UserTeam(
       id: json['id'] as String,
       userId: json['user_id'] as String,
       tournamentId: json['tournament_id'] as String,
       status: json['status'] as String,
       golferIds: golferIds,
+      teamName: teamName,
     );
   }
 }
 
 /// Fetches the active tournament (not COMPLETED).
-final activeTournamentProvider = FutureProvider<Tournament?>((ref) async {
+final activeTournamentProvider = FutureProvider.autoDispose<Tournament?>((ref) async {
   final client = ref.watch(supabaseClientProvider);
   final response = await client
       .from('tournaments')
@@ -189,11 +197,31 @@ final activeTournamentProvider = FutureProvider<Tournament?>((ref) async {
   if (response == null) {
     return null;
   }
-  return Tournament.fromJson(response);
+  final tournament = Tournament.fromJson(response);
+
+  // Set up realtime channel subscription to listen for updates to this active tournament
+  final channel = client.channel('active-tournament-${tournament.id}');
+  channel.onPostgresChanges(
+    event: PostgresChangeEvent.all,
+    schema: 'public',
+    table: 'tournaments',
+    callback: (payload) {
+      final record = payload.newRecord.isNotEmpty ? payload.newRecord : payload.oldRecord;
+      if (record.isNotEmpty && record['id'] == tournament.id) {
+        ref.invalidateSelf();
+      }
+    },
+  ).subscribe();
+
+  ref.onDispose(() async {
+    await client.removeChannel(channel);
+  });
+
+  return tournament;
 });
 
 /// Fetches the golfer list for the active tournament.
-final golferListProvider = FutureProvider<List<TournamentGolfer>>((ref) async {
+final golferListProvider = FutureProvider.autoDispose<List<TournamentGolfer>>((ref) async {
   final client = ref.watch(supabaseClientProvider);
   final activeTournamentAsync = ref.watch(activeTournamentProvider);
   final activeTournament = activeTournamentAsync.value;
@@ -217,7 +245,7 @@ final golferListProvider = FutureProvider<List<TournamentGolfer>>((ref) async {
 });
 
 /// Fetches the user's saved team for the active tournament.
-final userTeamProvider = FutureProvider<UserTeam?>((ref) async {
+final userTeamProvider = FutureProvider.autoDispose<UserTeam?>((ref) async {
   final client = ref.watch(supabaseClientProvider);
   final activeTournamentAsync = ref.watch(activeTournamentProvider);
   final sessionAsync = ref.watch(authSessionProvider);
