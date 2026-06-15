@@ -27,24 +27,20 @@ class FakeGoTrueClient extends Fake implements GoTrueClient {
 
   @override
   Stream<AuthState> get onAuthStateChange {
-    print("onAuthStateChange: getter called");
     final controller = StreamController<AuthState>.broadcast();
     scheduleMicrotask(() {
       if (!controller.isClosed) {
-        print("onAuthStateChange: emitting initialSession = ${_currentSession?.user.email}");
         controller.add(AuthState(AuthChangeEvent.initialSession, _currentSession));
       }
     });
     final sub = _authStateController.stream.listen(
       (event) {
-        print("onAuthStateChange: forwarding event = ${event.event}, session = ${event.session?.user.email}");
         controller.add(event);
       },
       onError: (err) => controller.addError(err),
       onDone: () => controller.close(),
     );
     controller.onCancel = () {
-      print("onAuthStateChange: stream cancelled");
       sub.cancel();
       controller.close();
     };
@@ -52,7 +48,6 @@ class FakeGoTrueClient extends Fake implements GoTrueClient {
   }
 
   void emitSession(Session? session) {
-    print("emitSession called with session = ${session?.user.email}");
     _currentSession = session;
     _currentUser = session?.user;
     _authStateController.add(AuthState(AuthChangeEvent.signedIn, session));
