@@ -7,22 +7,14 @@ import 'screens/auth/auth_screen.dart';
 import 'screens/auth/setup_team_screen.dart';
 import 'screens/dashboard/dashboard_screen.dart';
 import 'theme/colors.dart';
-import 'theme/spacing.dart';
 import 'theme/theme.dart';
-import 'widgets/badge.dart';
-import 'widgets/button.dart';
-import 'widgets/card.dart';
-import 'widgets/empty_state.dart';
-import 'widgets/responsive_layout.dart';
-import 'widgets/skeleton.dart';
-import 'widgets/table.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Supabase.initialize(
     url: const String.fromEnvironment('SUPABASE_URL'),
-    anonKey: const String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY'),
+    publishableKey: const String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY'),
   );
 
   runApp(const ProviderScope(child: MyApp()));

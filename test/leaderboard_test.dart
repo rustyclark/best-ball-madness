@@ -5,12 +5,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:best_ball_madness/providers/auth_providers.dart';
 import 'package:best_ball_madness/providers/draft_providers.dart';
-import 'package:best_ball_madness/providers/scorecard_providers.dart';
 import 'package:best_ball_madness/providers/leaderboard_providers.dart';
-import 'package:best_ball_madness/utils/score_utils.dart';
 import 'package:best_ball_madness/screens/leaderboard/leaderboard_screen.dart';
-import 'package:best_ball_madness/screens/scorecard/scorecard_screen.dart';
-import 'package:best_ball_madness/theme/colors.dart';
 import 'helpers/fake_supabase.dart';
 
 void main() {

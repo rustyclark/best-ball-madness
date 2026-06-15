@@ -5,7 +5,6 @@ import '../../providers/auth_providers.dart';
 import '../../providers/draft_providers.dart';
 import '../../theme/colors.dart';
 import '../../theme/spacing.dart';
-import '../../widgets/button.dart';
 import '../../widgets/card.dart';
 import '../../widgets/draft_panel.dart';
 import '../../widgets/golfer_table.dart';
@@ -159,9 +158,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ],
 
               // Lock Time Banner (Post-lock only)
-              if (isLocked && activeTournament?.lockTimeUtc != null) ...[
+              if (isLocked && activeTournament.lockTimeUtc != null) ...[
                 _buildBanner(
-                  text: 'Drafting has closed. Roster locked on ${formatLockTime(activeTournament!.lockTimeUtc!)}.',
+                  text: 'Drafting has closed. Roster locked on ${formatLockTime(activeTournament.lockTimeUtc!)}.',
                   bgColor: AppColors.border,
                   textColor: AppColors.textSecondary,
                   icon: Icons.lock_clock,

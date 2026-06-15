@@ -11,7 +11,6 @@ import 'package:best_ball_madness/screens/auth/setup_team_screen.dart';
 import 'package:best_ball_madness/screens/dashboard/dashboard_screen.dart';
 import 'package:best_ball_madness/widgets/button.dart';
 import 'package:best_ball_madness/widgets/draft_panel.dart';
-import 'package:best_ball_madness/widgets/golfer_table.dart';
 import 'helpers/fake_supabase.dart';
 
 void main() {
