@@ -1,6 +1,6 @@
 -- Start transaction and plan tests
 BEGIN;
-SELECT plan(13);
+SELECT plan(16);
 
 -- Verify extensions
 SELECT has_extension('uuid-ossp');
@@ -151,6 +151,9 @@ SELECT table_privs_are('public', 'teams', 'authenticated', ARRAY['SELECT', 'INSE
 SELECT table_privs_are('public', 'team_golfers', 'authenticated', ARRAY['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'REFERENCES', 'TRIGGER', 'TRUNCATE'], 'authenticated role can select, insert, update, delete on team_golfers');
 SELECT table_privs_are('public', 'tournaments', 'authenticated', ARRAY['SELECT', 'REFERENCES', 'TRIGGER', 'TRUNCATE'], 'authenticated role can only select on tournaments');
 SELECT table_privs_are('public', 'golfer_profiles', 'authenticated', ARRAY['SELECT', 'REFERENCES', 'TRIGGER', 'TRUNCATE'], 'authenticated role can only select on golfer_profiles');
+SELECT table_privs_are('public', 'team_hole_scores', 'authenticated', ARRAY['SELECT', 'REFERENCES', 'TRIGGER', 'TRUNCATE'], 'authenticated role can select on team_hole_scores');
+SELECT table_privs_are('public', 'team_round_scores', 'authenticated', ARRAY['SELECT', 'REFERENCES', 'TRIGGER', 'TRUNCATE'], 'authenticated role can select on team_round_scores');
+SELECT table_privs_are('public', 'team_standings', 'authenticated', ARRAY['SELECT', 'REFERENCES', 'TRIGGER', 'TRUNCATE'], 'authenticated role can select on team_standings');
 
 -- Finish tests
 SELECT * FROM finish();
