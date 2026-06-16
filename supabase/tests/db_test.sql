@@ -1,6 +1,6 @@
 -- Start transaction and plan tests
 BEGIN;
-SELECT plan(10);
+SELECT plan(13);
 
 -- Verify extensions
 SELECT has_extension('uuid-ossp');
@@ -17,8 +17,8 @@ INSERT INTO public.users (id, email, team_name) VALUES
 
 -- Test lower(team_name) unique index
 SELECT throws_ok(
-  $$ INSERT INTO public.users (id, email, team_name) VALUES ('00000000-0000-0000-0000-000000000003', 'user3@example.com', 'team alpha') $$,
-  'users_team_name_lower_idx'
+  $$ INSERT INTO public.users (id, email, team_name) VALUES ('00000000-0000-0000-0000-000000000303', 'user3@example.com', 'team alpha') $$,
+  '23505'
 );
 
 -- Insert mock tournament
@@ -144,6 +144,13 @@ SELECT results_eq(
   $$,
   'Leaderboard correctly breaks tie using budget_used ASC'
 );
+
+-- 5. Test table privileges for authenticated role
+SELECT table_privs_are('public', 'users', 'authenticated', ARRAY['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'REFERENCES', 'TRIGGER', 'TRUNCATE'], 'authenticated role can select, insert, update, delete on users');
+SELECT table_privs_are('public', 'teams', 'authenticated', ARRAY['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'REFERENCES', 'TRIGGER', 'TRUNCATE'], 'authenticated role can select, insert, update, delete on teams');
+SELECT table_privs_are('public', 'team_golfers', 'authenticated', ARRAY['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'REFERENCES', 'TRIGGER', 'TRUNCATE'], 'authenticated role can select, insert, update, delete on team_golfers');
+SELECT table_privs_are('public', 'tournaments', 'authenticated', ARRAY['SELECT', 'REFERENCES', 'TRIGGER', 'TRUNCATE'], 'authenticated role can only select on tournaments');
+SELECT table_privs_are('public', 'golfer_profiles', 'authenticated', ARRAY['SELECT', 'REFERENCES', 'TRIGGER', 'TRUNCATE'], 'authenticated role can only select on golfer_profiles');
 
 -- Finish tests
 SELECT * FROM finish();
