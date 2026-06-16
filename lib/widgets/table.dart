@@ -27,6 +27,7 @@ class BbmTable extends StatelessWidget {
         Widget tableContent = SizedBox(
           width: tableWidth,
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Header Row
               Container(
@@ -61,15 +62,11 @@ class BbmTable extends StatelessWidget {
           ),
         );
 
-        if (constraints.maxWidth < minWidth) {
-          return SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            child: tableContent,
-          );
-        }
-
-        return tableContent;
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
+          child: tableContent,
+        );
       },
     );
   }
