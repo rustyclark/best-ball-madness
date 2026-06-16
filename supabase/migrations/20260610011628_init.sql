@@ -141,7 +141,9 @@ CREATE INDEX idx_tee_times_golfer ON public.tee_times(tournament_golfer_id);
 -- ==========================================
 
 -- 3.1 Best Ball per team/round/hole
-CREATE OR REPLACE VIEW public.team_hole_scores AS
+CREATE OR REPLACE VIEW public.team_hole_scores
+WITH (security_invoker = true)
+AS
 SELECT tg.team_id,
        hs.round,
        hs.hole,
@@ -153,7 +155,9 @@ JOIN public.hole_scores hs ON hs.tournament_golfer_id = tg.tournament_golfer_id
 GROUP BY tg.team_id, hs.round, hs.hole;
 
 -- 3.2 Total To-Par score per team per round
-CREATE OR REPLACE VIEW public.team_round_scores AS
+CREATE OR REPLACE VIEW public.team_round_scores
+WITH (security_invoker = true)
+AS
 SELECT team_id,
        round,
        SUM(hole_to_par) AS round_to_par,
@@ -162,7 +166,9 @@ FROM public.team_hole_scores
 GROUP BY team_id, round;
 
 -- 3.3 Aggregated standings metrics for tie-breaks
-CREATE OR REPLACE VIEW public.team_standings AS
+CREATE OR REPLACE VIEW public.team_standings
+WITH (security_invoker = true)
+AS
 SELECT t.id AS team_id,
        t.status,
        COALESCE(SUM(trs.round_to_par), 0) AS total_to_par,

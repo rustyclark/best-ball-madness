@@ -10,6 +10,7 @@ class FakeGoTrueClient extends Fake implements GoTrueClient {
   bool loginCalled = false;
   bool signUpCalled = false;
   bool signOutCalled = false;
+  bool signUpReturnsNullSession = false;
 
   String? lastEmail;
   String? lastPassword;
@@ -97,6 +98,13 @@ class FakeGoTrueClient extends Fake implements GoTrueClient {
         createdAt: DateTime.now().toIso8601String(),
         email: lastEmail,
       );
+
+      if (signUpReturnsNullSession) {
+        return Future.delayed(const Duration(milliseconds: 50), () {
+          return AuthResponse(session: null, user: mockUser);
+        });
+      }
+
       final mockSession = Session(
         accessToken: 'mock-access-token',
         tokenType: 'bearer',
