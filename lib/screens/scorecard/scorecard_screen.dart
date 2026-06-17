@@ -752,11 +752,11 @@ class ScorecardScreen extends ConsumerWidget {
             spacing: AppSpacing.sm,
             runSpacing: AppSpacing.xs,
             children: [
-              _buildLegendItem('Eagle or Better', AppColors.scoreEagleOrBetterBg, AppColors.scoreEagleOrBetterText, theme),
-              _buildLegendItem('Birdie', AppColors.scoreBirdieBg, AppColors.scoreBirdieText, theme),
-              _buildLegendItem('Par', AppColors.scoreParBg, AppColors.scoreParText, theme),
-              _buildLegendItem('Bogey', AppColors.scoreBogeyBg, AppColors.scoreBogeyText, theme),
-              _buildLegendItem('Double+', AppColors.scoreDoubleWorseBg, AppColors.scoreDoubleWorseText, theme),
+              _buildLegendItem('-2', 'Eagle or Better', AppColors.scoreEagleOrBetterBg, AppColors.scoreEagleOrBetterText, theme),
+              _buildLegendItem('-1', 'Birdie', AppColors.scoreBirdieBg, AppColors.scoreBirdieText, theme),
+              _buildLegendItem('E', 'Par', AppColors.scoreParBg, AppColors.scoreParText, theme),
+              _buildLegendItem('+1', 'Bogey', AppColors.scoreBogeyBg, AppColors.scoreBogeyText, theme),
+              _buildLegendItem('+2', 'Double+', AppColors.scoreDoubleWorseBg, AppColors.scoreDoubleWorseText, theme),
             ],
           ),
         ],
@@ -764,7 +764,7 @@ class ScorecardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildLegendItem(String label, Color bg, Color text, ThemeData theme) {
+  Widget _buildLegendItem(String value, String label, Color bg, Color text, ThemeData theme) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -777,7 +777,7 @@ class ScorecardScreen extends ConsumerWidget {
             borderRadius: BorderRadius.circular(4.0),
           ),
           child: Text(
-            '-1', // placeholder to show text color
+            value,
             style: theme.textTheme.labelSmall?.copyWith(
               color: text,
               fontWeight: FontWeight.bold,
