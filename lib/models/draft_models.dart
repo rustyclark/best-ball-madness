@@ -57,6 +57,7 @@ class GolferProfile {
   final String espnId;
   final String name;
   final int? worldRank;
+  final bool isAmateur;
   final double? scoringAvg;
   final int? wins;
   final int? top10s;
@@ -64,17 +65,31 @@ class GolferProfile {
   final int? eventsPlayed;
   final int? roundsPlayed;
 
+  final double? priorScoringAvg;
+  final int? priorWins;
+  final int? priorTop10s;
+  final int? priorCutsMade;
+  final int? priorEventsPlayed;
+  final int? priorRoundsPlayed;
+
   GolferProfile({
     required this.id,
     required this.espnId,
     required this.name,
     this.worldRank,
+    this.isAmateur = false,
     this.scoringAvg,
     this.wins,
     this.top10s,
     this.cutsMade,
     this.eventsPlayed,
     this.roundsPlayed,
+    this.priorScoringAvg,
+    this.priorWins,
+    this.priorTop10s,
+    this.priorCutsMade,
+    this.priorEventsPlayed,
+    this.priorRoundsPlayed,
   });
 
   factory GolferProfile.fromJson(Map<String, dynamic> json) {
@@ -83,6 +98,7 @@ class GolferProfile {
       espnId: json['espn_id'] as String,
       name: json['name'] as String,
       worldRank: json['world_rank'] as int?,
+      isAmateur: json['is_amateur'] as bool? ?? false,
       scoringAvg: json['scoring_avg'] != null
           ? (json['scoring_avg'] as num).toDouble()
           : null,
@@ -91,6 +107,14 @@ class GolferProfile {
       cutsMade: json['cuts_made'] as int?,
       eventsPlayed: json['events_played'] as int?,
       roundsPlayed: json['rounds_played'] as int?,
+      priorScoringAvg: json['prior_scoring_avg'] != null
+          ? (json['prior_scoring_avg'] as num).toDouble()
+          : null,
+      priorWins: json['prior_wins'] as int?,
+      priorTop10s: json['prior_top_10s'] as int?,
+      priorCutsMade: json['prior_cuts_made'] as int?,
+      priorEventsPlayed: json['prior_events_played'] as int?,
+      priorRoundsPlayed: json['prior_rounds_played'] as int?,
     );
   }
 }
