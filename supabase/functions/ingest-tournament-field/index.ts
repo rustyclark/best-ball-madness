@@ -161,7 +161,20 @@ serve(async (req) => {
                           }
                         }
                       }
-                      const eventsPlayed = flatStats['tournamentsPlayed'] || 0;
+                      
+                      // Sanitize and logically correct tournamentsPlayed and roundsPlayed
+                      const cutsMade = flatStats['cutsMade'] ? Math.round(flatStats['cutsMade']) : 0;
+                      const wins = flatStats['wins'] ? Math.round(flatStats['wins']) : 0;
+                      const top10s = flatStats['topTenFinishes'] ? Math.round(flatStats['topTenFinishes']) : 0;
+                      let eventsPlayed = flatStats['tournamentsPlayed'] ? Math.round(flatStats['tournamentsPlayed']) : 0;
+                      eventsPlayed = Math.max(eventsPlayed, cutsMade, wins, top10s);
+                      
+                      let roundsPlayed = flatStats['roundsPlayed'] ? Math.round(flatStats['roundsPlayed']) : 0;
+                      roundsPlayed = Math.max(roundsPlayed, eventsPlayed * 2);
+                      
+                      flatStats['tournamentsPlayed'] = eventsPlayed;
+                      flatStats['roundsPlayed'] = roundsPlayed;
+
                       if (eventsPlayed > maxEvents) {
                         maxEvents = eventsPlayed;
                         bestStats = flatStats;
@@ -193,6 +206,20 @@ serve(async (req) => {
                 }
               }
             }
+            
+            // Sanitize and logically correct fallback stats
+            const cutsMade = flatStats['cutsMade'] ? Math.round(flatStats['cutsMade']) : 0;
+            const wins = flatStats['wins'] ? Math.round(flatStats['wins']) : 0;
+            const top10s = flatStats['topTenFinishes'] ? Math.round(flatStats['topTenFinishes']) : 0;
+            let eventsPlayed = flatStats['tournamentsPlayed'] ? Math.round(flatStats['tournamentsPlayed']) : 0;
+            eventsPlayed = Math.max(eventsPlayed, cutsMade, wins, top10s);
+            
+            let roundsPlayed = flatStats['roundsPlayed'] ? Math.round(flatStats['roundsPlayed']) : 0;
+            roundsPlayed = Math.max(roundsPlayed, eventsPlayed * 2);
+            
+            flatStats['tournamentsPlayed'] = eventsPlayed;
+            flatStats['roundsPlayed'] = roundsPlayed;
+
             return flatStats;
           } catch {
             return null;
