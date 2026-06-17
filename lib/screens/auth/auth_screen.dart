@@ -62,7 +62,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           if (response.user == null) {
             throw const AuthException('Sign up failed. Please try again.');
           }
-          
+
           if (response.session == null) {
             setState(() {
               _signUpSuccess = true;
@@ -192,8 +192,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   _signUpSuccess
                       ? 'Confirm your email address'
                       : (_isSignUp
-                          ? 'Create your account to start drafting'
-                          : 'Sign in to manage your golf rosters'),
+                            ? 'Create your account to start drafting'
+                            : 'Sign in to manage your golf rosters'),
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -292,7 +292,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                                   if (value == null || value.trim().isEmpty) {
                                     return 'Please enter your email';
                                   }
-                                  final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
+                                  final emailRegex = RegExp(
+                                    r'^[^@]+@[^@]+\.[^@]+$',
+                                  );
                                   if (!emailRegex.hasMatch(value.trim())) {
                                     return 'Please enter a valid email address';
                                   }
@@ -328,7 +330,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                                   alignment: Alignment.centerRight,
                                   child: BbmButton.text(
                                     text: 'Forgot Password?',
-                                    onPressed: _isLoading ? null : _resetPassword,
+                                    onPressed: _isLoading
+                                        ? null
+                                        : _resetPassword,
                                   ),
                                 ),
                               ],

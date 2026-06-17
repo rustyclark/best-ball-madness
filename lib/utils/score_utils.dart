@@ -20,27 +20,48 @@ ColorPair getScoreColors(int? score, int par, [String? scoreType]) {
     case 'EAGLE':
     case 'DOUBLE_EAGLE':
     case 'ALBATROSS':
-      return const ColorPair(AppColors.scoreEagleOrBetterBg, AppColors.scoreEagleOrBetterText);
+      return const ColorPair(
+        AppColors.scoreEagleOrBetterBg,
+        AppColors.scoreEagleOrBetterText,
+      );
     case 'BIRDIE':
-      return const ColorPair(AppColors.scoreBirdieBg, AppColors.scoreBirdieText);
+      return const ColorPair(
+        AppColors.scoreBirdieBg,
+        AppColors.scoreBirdieText,
+      );
     case 'PAR':
       return const ColorPair(AppColors.scoreParBg, AppColors.scoreParText);
     case 'BOGEY':
       return const ColorPair(AppColors.scoreBogeyBg, AppColors.scoreBogeyText);
     case 'DOUBLE_BOGEY':
     case 'DOUBLE_BOGEY_OR_WORSE':
-      return const ColorPair(AppColors.scoreDoubleWorseBg, AppColors.scoreDoubleWorseText);
+      return const ColorPair(
+        AppColors.scoreDoubleWorseBg,
+        AppColors.scoreDoubleWorseText,
+      );
     default:
       if (diff <= -2) {
-        return const ColorPair(AppColors.scoreEagleOrBetterBg, AppColors.scoreEagleOrBetterText);
+        return const ColorPair(
+          AppColors.scoreEagleOrBetterBg,
+          AppColors.scoreEagleOrBetterText,
+        );
       } else if (diff == -1) {
-        return const ColorPair(AppColors.scoreBirdieBg, AppColors.scoreBirdieText);
+        return const ColorPair(
+          AppColors.scoreBirdieBg,
+          AppColors.scoreBirdieText,
+        );
       } else if (diff == 0) {
         return const ColorPair(AppColors.scoreParBg, AppColors.scoreParText);
       } else if (diff == 1) {
-        return const ColorPair(AppColors.scoreBogeyBg, AppColors.scoreBogeyText);
+        return const ColorPair(
+          AppColors.scoreBogeyBg,
+          AppColors.scoreBogeyText,
+        );
       } else {
-        return const ColorPair(AppColors.scoreDoubleWorseBg, AppColors.scoreDoubleWorseText);
+        return const ColorPair(
+          AppColors.scoreDoubleWorseBg,
+          AppColors.scoreDoubleWorseText,
+        );
       }
   }
 }
@@ -62,4 +83,3 @@ String formatTeeTime(DateTime dateTime) {
   final displayHour = hour % 12 == 0 ? 12 : hour % 12;
   return '$displayHour:$minute $period';
 }
-

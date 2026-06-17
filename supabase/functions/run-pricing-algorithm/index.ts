@@ -80,12 +80,15 @@ serve(async (req) => {
       const priorRounds = golfer.prior_rounds_played ?? 0
       const blendedRounds = currentRounds + priorWeight * priorRounds
 
+      const rawScoringAvg = golfer.scoring_avg && golfer.scoring_avg > 0 ? golfer.scoring_avg : 72.0
+      const rawPriorScoringAvg = golfer.prior_scoring_avg && golfer.prior_scoring_avg > 0 ? golfer.prior_scoring_avg : 72.0
+
       let scoringAvg = 72.0
       if (blendedRounds > 0) {
-        scoringAvg = ((currentRounds * (golfer.scoring_avg ?? 72.0)) + 
-                      (priorWeight * priorRounds * (golfer.prior_scoring_avg ?? 72.0))) / blendedRounds
+        scoringAvg = ((currentRounds * rawScoringAvg) + 
+                      (priorWeight * priorRounds * rawPriorScoringAvg)) / blendedRounds
       } else {
-        scoringAvg = golfer.scoring_avg ?? golfer.prior_scoring_avg ?? 72.0
+        scoringAvg = rawScoringAvg
       }
 
       return scoringAvg

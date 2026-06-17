@@ -72,8 +72,10 @@ serve(async (req) => {
         const statsData = await statsRes.json()
         
         const flatStats: Record<string, number> = {}
-        for (const cat of statsData.categories || []) {
-          for (const stat of cat.statistics || []) {
+        const categories = statsData.splits?.categories ?? statsData.categories ?? []
+        for (const cat of categories) {
+          const stats = cat.stats ?? cat.statistics ?? []
+          for (const stat of stats) {
             if (stat.name && typeof stat.value === 'number') {
               flatStats[stat.name] = stat.value
             }

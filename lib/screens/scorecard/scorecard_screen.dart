@@ -32,7 +32,8 @@ class ScorecardCell extends ConsumerStatefulWidget {
   ConsumerState<ScorecardCell> createState() => _ScorecardCellState();
 }
 
-class _ScorecardCellState extends ConsumerState<ScorecardCell> with SingleTickerProviderStateMixin {
+class _ScorecardCellState extends ConsumerState<ScorecardCell>
+    with SingleTickerProviderStateMixin {
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
 
@@ -59,7 +60,10 @@ class _ScorecardCellState extends ConsumerState<ScorecardCell> with SingleTicker
   @override
   Widget build(BuildContext context) {
     // Listen for realtime score events matching this golfer and hole to trigger the pulse
-    ref.listen<ScoreUpdateEvent?>(lastRealtimeScoreUpdateProvider, (previous, next) {
+    ref.listen<ScoreUpdateEvent?>(lastRealtimeScoreUpdateProvider, (
+      previous,
+      next,
+    ) {
       if (next != null &&
           next.tournamentGolferId == widget.golferId &&
           next.hole == widget.hole) {
@@ -124,11 +128,13 @@ class ScorecardScreen extends ConsumerWidget {
 
     return ResponsiveLayout(
       appBar: AppBar(
-        title: Text(isCompetitor
-            ? (teamAsync.value?.teamName != null
-                ? '${teamAsync.value!.teamName!.toUpperCase()} SCORECARD'
-                : 'COMPETITOR SCORECARD')
-            : 'LIVE SCORECARD'),
+        title: Text(
+          isCompetitor
+              ? (teamAsync.value?.teamName != null
+                    ? '${teamAsync.value!.teamName!.toUpperCase()} SCORECARD'
+                    : 'COMPETITOR SCORECARD')
+              : 'LIVE SCORECARD',
+        ),
       ),
       child: SafeArea(
         child: teamAsync.when(
@@ -137,18 +143,25 @@ class ScorecardScreen extends ConsumerWidget {
               return Center(
                 child: Padding(
                   padding: const EdgeInsets.all(AppSpacing.xl),
-                  child: Text(isCompetitor
-                      ? 'Competitor team not found.'
-                      : 'No active team found. Please save a roster first.'),
+                  child: Text(
+                    isCompetitor
+                        ? 'Competitor team not found.'
+                        : 'No active team found. Please save a roster first.',
+                  ),
                 ),
               );
             }
 
             final selectedRound = ref.watch(selectedRoundProvider);
-            
+
             // Activate the Supabase Realtime subscription for this round
             if (isCompetitor) {
-              ref.watch(competitorScorecardSubscriptionProvider((teamId: teamId!, round: selectedRound)));
+              ref.watch(
+                competitorScorecardSubscriptionProvider((
+                  teamId: teamId!,
+                  round: selectedRound,
+                )),
+              );
             } else {
               ref.watch(scorecardSubscriptionProvider(selectedRound));
             }
@@ -172,18 +185,36 @@ class ScorecardScreen extends ConsumerWidget {
 
             if (isCompetitor) {
               final allScoresAsync = ref.watch(competitorTeamProvider(teamId!));
-              teamScoresAsync = allScoresAsync.whenData((allScores) =>
-                  allScores.where((s) => s.round == selectedRound).toList());
-              golferScoresAsync = ref.watch(competitorGolfersHoleScoresProvider((teamId: teamId!, round: selectedRound)));
-              teeTimesAsync = ref.watch(competitorGolfersTeeTimesProvider((teamId: teamId!, round: selectedRound)));
+              teamScoresAsync = allScoresAsync.whenData(
+                (allScores) =>
+                    allScores.where((s) => s.round == selectedRound).toList(),
+              );
+              golferScoresAsync = ref.watch(
+                competitorGolfersHoleScoresProvider((
+                  teamId: teamId!,
+                  round: selectedRound,
+                )),
+              );
+              teeTimesAsync = ref.watch(
+                competitorGolfersTeeTimesProvider((
+                  teamId: teamId!,
+                  round: selectedRound,
+                )),
+              );
             } else {
               teamScoresAsync = ref.watch(userTeamScoreProvider(selectedRound));
-              golferScoresAsync = ref.watch(teamGolfersHoleScoresProvider(selectedRound));
-              teeTimesAsync = ref.watch(teamGolfersTeeTimesProvider(selectedRound));
+              golferScoresAsync = ref.watch(
+                teamGolfersHoleScoresProvider(selectedRound),
+              );
+              teeTimesAsync = ref.watch(
+                teamGolfersTeeTimesProvider(selectedRound),
+              );
             }
 
             final golfers = golferListAsync.value ?? [];
-            final teamGolfers = golfers.where((g) => team.golferIds.contains(g.id)).toList();
+            final teamGolfers = golfers
+                .where((g) => team.golferIds.contains(g.id))
+                .toList();
 
             return SingleChildScrollView(
               padding: const EdgeInsets.all(AppSpacing.md),
@@ -211,7 +242,8 @@ class ScorecardScreen extends ConsumerWidget {
                     const SizedBox(height: AppSpacing.sm),
                   ] else if (teamStatus == 'DQ') ...[
                     _buildBanner(
-                      text: 'TEAM DISQUALIFIED: Your team has been disqualified for failing to draft a legal roster (incomplete roster or over budget) before the tournament lock time.',
+                      text:
+                          'TEAM DISQUALIFIED: Your team has been disqualified for failing to draft a legal roster (incomplete roster or over budget) before the tournament lock time.',
                       bgColor: AppColors.statusDqBg,
                       textColor: AppColors.statusDqText,
                       icon: Icons.gavel_outlined,
@@ -252,15 +284,23 @@ class ScorecardScreen extends ConsumerWidget {
                   BbmCard(
                     padding: EdgeInsets.zero,
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppSpacing.md,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.md,
+                            ),
                             child: Row(
                               children: [
-                                const Icon(Icons.grid_on_outlined, color: AppColors.primary, size: 20),
+                                const Icon(
+                                  Icons.grid_on_outlined,
+                                  color: AppColors.primary,
+                                  size: 20,
+                                ),
                                 const SizedBox(width: AppSpacing.sm),
                                 Text(
                                   'ROUND $selectedRound SCORECARD',
@@ -293,7 +333,10 @@ class ScorecardScreen extends ConsumerWidget {
                                     final index = entry.key;
                                     final golfer = entry.value;
                                     final golferScores = scores
-                                        .where((s) => s.tournamentGolferId == golfer.id)
+                                        .where(
+                                          (s) =>
+                                              s.tournamentGolferId == golfer.id,
+                                        )
                                         .toList();
                                     return _buildGolferRow(
                                       golfer: golfer,
@@ -309,14 +352,18 @@ class ScorecardScreen extends ConsumerWidget {
                                   }),
 
                                   // Team Best Ball row divider
-                                  const Divider(color: AppColors.border, height: 1),
+                                  const Divider(
+                                    color: AppColors.border,
+                                    height: 1,
+                                  ),
 
                                   // Team row
                                   _buildTeamRow(
                                     teamScores: teamScores,
                                     allScores: scores,
                                     theme: theme,
-                                    backgroundColor: AppColors.primary.withValues(alpha: 0.05),
+                                    backgroundColor: AppColors.primary
+                                        .withValues(alpha: 0.05),
                                   ),
                                 ],
                               );
@@ -324,7 +371,9 @@ class ScorecardScreen extends ConsumerWidget {
                             loading: () => const Center(
                               child: Padding(
                                 padding: EdgeInsets.all(AppSpacing.xl),
-                                child: CircularProgressIndicator(color: AppColors.primary),
+                                child: CircularProgressIndicator(
+                                  color: AppColors.primary,
+                                ),
                               ),
                             ),
                             error: (err, stack) => Center(
@@ -332,7 +381,9 @@ class ScorecardScreen extends ConsumerWidget {
                                 padding: const EdgeInsets.all(AppSpacing.lg),
                                 child: Text(
                                   'Error loading scorecard: $err',
-                                  style: const TextStyle(color: AppColors.scoreBogeyBg),
+                                  style: const TextStyle(
+                                    color: AppColors.scoreBogeyBg,
+                                  ),
                                 ),
                               ),
                             ),
@@ -352,9 +403,8 @@ class ScorecardScreen extends ConsumerWidget {
           loading: () => const Center(
             child: CircularProgressIndicator(color: AppColors.primary),
           ),
-          error: (err, stack) => Center(
-            child: Text('Error loading team: $err'),
-          ),
+          error: (err, stack) =>
+              Center(child: Text('Error loading team: $err')),
         ),
       ),
     );
@@ -380,10 +430,7 @@ class ScorecardScreen extends ConsumerWidget {
           Expanded(
             child: Text(
               text,
-              style: TextStyle(
-                color: textColor,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -416,7 +463,9 @@ class ScorecardScreen extends ConsumerWidget {
                   color: isSelected ? AppColors.primary : AppColors.cardBg,
                   borderRadius: AppSpacing.borderRadiusMd,
                   border: Border.all(
-                    color: isSelected ? AppColors.primaryHover : AppColors.border,
+                    color: isSelected
+                        ? AppColors.primaryHover
+                        : AppColors.border,
                     width: 1,
                   ),
                 ),
@@ -424,7 +473,9 @@ class ScorecardScreen extends ConsumerWidget {
                   'R$roundNum',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: isSelected ? AppColors.textPrimary : AppColors.textSecondary,
+                    color: isSelected
+                        ? AppColors.textPrimary
+                        : AppColors.textSecondary,
                   ),
                 ),
               ),
@@ -447,15 +498,18 @@ class ScorecardScreen extends ConsumerWidget {
           ),
         ),
       ),
-      ...List.generate(18, (i) => Center(
-        child: Text(
-          '${i + 1}',
-          style: theme.textTheme.labelLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: AppColors.textSecondary,
+      ...List.generate(
+        18,
+        (i) => Center(
+          child: Text(
+            '${i + 1}',
+            style: theme.textTheme.labelLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: AppColors.textSecondary,
+            ),
           ),
         ),
-      )),
+      ),
       Center(
         child: Text(
           'TOT',
@@ -551,9 +605,7 @@ class ScorecardScreen extends ConsumerWidget {
 
     return Text(
       'ACTIVE',
-      style: theme.textTheme.labelSmall?.copyWith(
-        color: AppColors.primary,
-      ),
+      style: theme.textTheme.labelSmall?.copyWith(color: AppColors.primary),
     );
   }
 
@@ -574,11 +626,7 @@ class ScorecardScreen extends ConsumerWidget {
     }
 
     return BbmTableRow(
-      columnWidths: [
-        3.0,
-        ...List.generate(18, (_) => 1.0),
-        1.5,
-      ],
+      columnWidths: [3.0, ...List.generate(18, (_) => 1.0), 1.5],
       backgroundColor: backgroundColor,
       cells: [
         // Name & Status
@@ -646,11 +694,7 @@ class ScorecardScreen extends ConsumerWidget {
     }
 
     return BbmTableRow(
-      columnWidths: [
-        3.0,
-        ...List.generate(18, (_) => 1.0),
-        1.5,
-      ],
+      columnWidths: [3.0, ...List.generate(18, (_) => 1.0), 1.5],
       backgroundColor: backgroundColor,
       cells: [
         // Team Row Title
@@ -684,14 +728,13 @@ class ScorecardScreen extends ConsumerWidget {
         ...List.generate(18, (index) {
           final holeNum = index + 1;
           final teamScoreMatches = teamScores.where((s) => s.hole == holeNum);
-          final teamHoleScore = teamScoreMatches.isNotEmpty ? teamScoreMatches.first : null;
+          final teamHoleScore = teamScoreMatches.isNotEmpty
+              ? teamScoreMatches.first
+              : null;
 
           final par = _getParForHole(holeNum, allScores, teamScores);
 
-          final colors = getScoreColors(
-            teamHoleScore?.bestBallScore,
-            par,
-          );
+          final colors = getScoreColors(teamHoleScore?.bestBallScore, par);
 
           return Container(
             margin: const EdgeInsets.all(2.0),
@@ -724,7 +767,11 @@ class ScorecardScreen extends ConsumerWidget {
     );
   }
 
-  int _getParForHole(int hole, List<HoleScore> allScores, List<TeamHoleScore> teamScores) {
+  int _getParForHole(
+    int hole,
+    List<HoleScore> allScores,
+    List<TeamHoleScore> teamScores,
+  ) {
     final scoreMatches = allScores.where((s) => s.hole == hole);
     if (scoreMatches.isNotEmpty) return scoreMatches.first.par;
 
@@ -752,11 +799,41 @@ class ScorecardScreen extends ConsumerWidget {
             spacing: AppSpacing.sm,
             runSpacing: AppSpacing.xs,
             children: [
-              _buildLegendItem('Eagle or Better', AppColors.scoreEagleOrBetterBg, AppColors.scoreEagleOrBetterText, theme),
-              _buildLegendItem('Birdie', AppColors.scoreBirdieBg, AppColors.scoreBirdieText, theme),
-              _buildLegendItem('Par', AppColors.scoreParBg, AppColors.scoreParText, theme),
-              _buildLegendItem('Bogey', AppColors.scoreBogeyBg, AppColors.scoreBogeyText, theme),
-              _buildLegendItem('Double+', AppColors.scoreDoubleWorseBg, AppColors.scoreDoubleWorseText, theme),
+              _buildLegendItem(
+                '-2',
+                'Eagle or Better',
+                AppColors.scoreEagleOrBetterBg,
+                AppColors.scoreEagleOrBetterText,
+                theme,
+              ),
+              _buildLegendItem(
+                '-1',
+                'Birdie',
+                AppColors.scoreBirdieBg,
+                AppColors.scoreBirdieText,
+                theme,
+              ),
+              _buildLegendItem(
+                'E',
+                'Par',
+                AppColors.scoreParBg,
+                AppColors.scoreParText,
+                theme,
+              ),
+              _buildLegendItem(
+                '+1',
+                'Bogey',
+                AppColors.scoreBogeyBg,
+                AppColors.scoreBogeyText,
+                theme,
+              ),
+              _buildLegendItem(
+                '+2',
+                'Double+',
+                AppColors.scoreDoubleWorseBg,
+                AppColors.scoreDoubleWorseText,
+                theme,
+              ),
             ],
           ),
         ],
@@ -764,7 +841,13 @@ class ScorecardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildLegendItem(String label, Color bg, Color text, ThemeData theme) {
+  Widget _buildLegendItem(
+    String value,
+    String label,
+    Color bg,
+    Color text,
+    ThemeData theme,
+  ) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -777,7 +860,7 @@ class ScorecardScreen extends ConsumerWidget {
             borderRadius: BorderRadius.circular(4.0),
           ),
           child: Text(
-            '-1', // placeholder to show text color
+            value,
             style: theme.textTheme.labelSmall?.copyWith(
               color: text,
               fontWeight: FontWeight.bold,

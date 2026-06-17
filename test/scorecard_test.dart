@@ -47,21 +47,24 @@ void main() {
       expect(doubleWorseColors.bg, AppColors.scoreDoubleWorseBg);
     });
 
-    test('getScoreColors handles negative scores (e.g. relation to par directly)', () {
-      // If score is -1 and par is 0 (relative score), it is Birdie
-      final birdieRelative = getScoreColors(-1, 0);
-      expect(birdieRelative.bg, AppColors.scoreBirdieBg);
-      expect(birdieRelative.text, AppColors.scoreBirdieText);
+    test(
+      'getScoreColors handles negative scores (e.g. relation to par directly)',
+      () {
+        // If score is -1 and par is 0 (relative score), it is Birdie
+        final birdieRelative = getScoreColors(-1, 0);
+        expect(birdieRelative.bg, AppColors.scoreBirdieBg);
+        expect(birdieRelative.text, AppColors.scoreBirdieText);
 
-      // If score is -2 and par is 0 (relative score), it is Eagle
-      final eagleRelative = getScoreColors(-2, 0);
-      expect(eagleRelative.bg, AppColors.scoreEagleOrBetterBg);
-      expect(eagleRelative.text, AppColors.scoreEagleOrBetterText);
+        // If score is -2 and par is 0 (relative score), it is Eagle
+        final eagleRelative = getScoreColors(-2, 0);
+        expect(eagleRelative.bg, AppColors.scoreEagleOrBetterBg);
+        expect(eagleRelative.text, AppColors.scoreEagleOrBetterText);
 
-      // If score is -3 and par is 0, it is Eagle or better
-      final albatrossRelative = getScoreColors(-3, 0);
-      expect(albatrossRelative.bg, AppColors.scoreEagleOrBetterBg);
-    });
+        // If score is -3 and par is 0, it is Eagle or better
+        final albatrossRelative = getScoreColors(-3, 0);
+        expect(albatrossRelative.bg, AppColors.scoreEagleOrBetterBg);
+      },
+    );
   });
 
   group('Scorecard Widgets Tests', () {
@@ -120,11 +123,15 @@ void main() {
               'location': 'Augusta, GA',
               'par': 72,
               'yards': 7400,
-              'start_date': DateTime.now().subtract(const Duration(days: 1)).toIso8601String(),
-              'end_date': DateTime.now().add(const Duration(days: 2)).toIso8601String(),
+              'start_date': DateTime.now()
+                  .subtract(const Duration(days: 1))
+                  .toIso8601String(),
+              'end_date': DateTime.now()
+                  .add(const Duration(days: 2))
+                  .toIso8601String(),
               'status': 'IN_PROGRESS',
               'current_round': 2,
-            }
+            },
           ],
           'teams': [
             {
@@ -132,7 +139,7 @@ void main() {
               'user_id': 'mock-user-id',
               'tournament_id': 't-1',
               'status': 'ACTIVE',
-            }
+            },
           ],
           'team_golfers': [
             {'tournament_golfer_id': 'tg-1'},
@@ -148,7 +155,7 @@ void main() {
               'par': 4,
               'best_ball_score': 3,
               'hole_to_par': -1,
-            }
+            },
           ],
           'hole_scores': [
             {
@@ -159,7 +166,7 @@ void main() {
               'par': 4,
               'score': 3,
               'score_type': 'BIRDIE',
-            }
+            },
           ],
           'tee_times': [
             {
@@ -169,7 +176,7 @@ void main() {
               'tee_time_utc': DateTime.now().toUtc().toIso8601String(),
               'start_tee': 1,
               'status': 'SCHEDULED',
-            }
+            },
           ],
         },
       );
@@ -183,13 +190,13 @@ void main() {
           userTeamProvider.overrideWith((ref) => mockTeam),
           golferListProvider.overrideWith((ref) => mockGolfers),
         ],
-        child: const MaterialApp(
-          home: ScorecardScreen(),
-        ),
+        child: const MaterialApp(home: ScorecardScreen()),
       );
     }
 
-    testWidgets('Defaults to active tournament current_round tab', (WidgetTester tester) async {
+    testWidgets('Defaults to active tournament current_round tab', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(createScorecardWidget());
       await tester.pumpAndSettle();
 
@@ -201,7 +208,9 @@ void main() {
       expect(r2Text, findsOneWidget);
     });
 
-    testWidgets('Tapping round tab updates round view selection', (WidgetTester tester) async {
+    testWidgets('Tapping round tab updates round view selection', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(createScorecardWidget());
       await tester.pumpAndSettle();
 
@@ -217,35 +226,49 @@ void main() {
       expect(find.text('ROUND 3 SCORECARD'), findsOneWidget);
     });
 
-    testWidgets('Weather delay banner is visible when tournament is SUSPENDED', (WidgetTester tester) async {
-      mockTournament = Tournament(
-        id: 't-1',
-        espnEventId: 'espn-1',
-        name: 'The Masters',
-        course: 'Augusta National',
-        location: 'Augusta, GA',
-        par: 72,
-        yards: 7400,
-        startDate: DateTime.now(),
-        endDate: DateTime.now(),
-        status: 'SUSPENDED', // Suspended status!
-        currentRound: 2,
-      );
+    testWidgets(
+      'Weather delay banner is visible when tournament is SUSPENDED',
+      (WidgetTester tester) async {
+        mockTournament = Tournament(
+          id: 't-1',
+          espnEventId: 'espn-1',
+          name: 'The Masters',
+          course: 'Augusta National',
+          location: 'Augusta, GA',
+          par: 72,
+          yards: 7400,
+          startDate: DateTime.now(),
+          endDate: DateTime.now(),
+          status: 'SUSPENDED', // Suspended status!
+          currentRound: 2,
+        );
 
-      await tester.pumpWidget(createScorecardWidget());
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(createScorecardWidget());
+        await tester.pumpAndSettle();
 
-      expect(find.text('WEATHER DELAY: Play is currently suspended.'), findsOneWidget);
-    });
+        expect(
+          find.text('WEATHER DELAY: Play is currently suspended.'),
+          findsOneWidget,
+        );
+      },
+    );
 
-    testWidgets('Weather delay banner is hidden when tournament is IN_PROGRESS', (WidgetTester tester) async {
-      await tester.pumpWidget(createScorecardWidget());
-      await tester.pumpAndSettle();
+    testWidgets(
+      'Weather delay banner is hidden when tournament is IN_PROGRESS',
+      (WidgetTester tester) async {
+        await tester.pumpWidget(createScorecardWidget());
+        await tester.pumpAndSettle();
 
-      expect(find.text('WEATHER DELAY: Play is currently suspended.'), findsNothing);
-    });
+        expect(
+          find.text('WEATHER DELAY: Play is currently suspended.'),
+          findsNothing,
+        );
+      },
+    );
 
-    testWidgets('CUT banner is visible when team status is CUT', (WidgetTester tester) async {
+    testWidgets('CUT banner is visible when team status is CUT', (
+      WidgetTester tester,
+    ) async {
       mockTeam = UserTeam(
         id: 'team-1',
         userId: 'user-1',
@@ -257,11 +280,19 @@ void main() {
       await tester.pumpWidget(createScorecardWidget());
       await tester.pumpAndSettle();
 
-      expect(find.text('TEAM ELIMINATED: Your team missed the cut.'), findsOneWidget);
-      expect(find.text('TEAM DISQUALIFIED: Your team has been DQ\'d.'), findsNothing);
+      expect(
+        find.text('TEAM ELIMINATED: Your team missed the cut.'),
+        findsOneWidget,
+      );
+      expect(
+        find.text('TEAM DISQUALIFIED: Your team has been DQ\'d.'),
+        findsNothing,
+      );
     });
 
-    testWidgets('DQ banner is visible when team status is DQ', (WidgetTester tester) async {
+    testWidgets('DQ banner is visible when team status is DQ', (
+      WidgetTester tester,
+    ) async {
       mockTeam = UserTeam(
         id: 'team-1',
         userId: 'user-1',
@@ -273,11 +304,21 @@ void main() {
       await tester.pumpWidget(createScorecardWidget());
       await tester.pumpAndSettle();
 
-      expect(find.text('TEAM DISQUALIFIED: Your team has been disqualified for failing to draft a legal roster (incomplete roster or over budget) before the tournament lock time.'), findsOneWidget);
-      expect(find.text('TEAM ELIMINATED: Your team missed the cut.'), findsNothing);
+      expect(
+        find.text(
+          'TEAM DISQUALIFIED: Your team has been disqualified for failing to draft a legal roster (incomplete roster or over budget) before the tournament lock time.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text('TEAM ELIMINATED: Your team missed the cut.'),
+        findsNothing,
+      );
     });
 
-    testWidgets('Realtime event updates golfer score live', (WidgetTester tester) async {
+    testWidgets('Realtime event updates golfer score live', (
+      WidgetTester tester,
+    ) async {
       // Initially, mockData has score 3 for Golfer 1 on Hole 1
       await tester.pumpWidget(createScorecardWidget());
       await tester.pumpAndSettle();
@@ -289,7 +330,9 @@ void main() {
       // Retrieve the active realtime channel
       final channels = fakeSupabase.activeChannels;
       expect(channels, isNotEmpty);
-      final scorecardChannel = channels.firstWhere((c) => c.name.startsWith('scorecard-realtime'));
+      final scorecardChannel = channels.firstWhere(
+        (c) => c.name.startsWith('scorecard-realtime'),
+      );
 
       // Let's change the mock data return for next PostgREST fetch so that when invalidation occurs,
       // the new fetch gets the updated score record
@@ -302,7 +345,7 @@ void main() {
           'par': 4,
           'score': 2, // Updated to 2
           'score_type': 'EAGLE',
-        }
+        },
       ];
 
       // Trigger change

@@ -1,4 +1,3 @@
-
 /// Model representing a team's row in the leaderboard standings.
 class LeaderboardStanding {
   final String teamId;
@@ -52,4 +51,3 @@ class LeaderboardStanding {
     );
   }
 }
-

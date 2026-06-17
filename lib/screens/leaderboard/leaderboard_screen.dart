@@ -19,7 +19,10 @@ class LeaderboardScreen extends ConsumerWidget {
     return '$score';
   }
 
-  bool _isTied(LeaderboardStanding standing, List<LeaderboardStanding> activeStandings) {
+  bool _isTied(
+    LeaderboardStanding standing,
+    List<LeaderboardStanding> activeStandings,
+  ) {
     if (standing.status != 'ACTIVE' || standing.rank == null) return false;
     return activeStandings.where((s) => s.rank == standing.rank).length > 1;
   }
@@ -50,9 +53,7 @@ class LeaderboardScreen extends ConsumerWidget {
     final standingsAsync = ref.watch(leaderboardProvider);
 
     return ResponsiveLayout(
-      appBar: AppBar(
-        title: const Text('TOURNAMENT LEADERBOARD'),
-      ),
+      appBar: AppBar(title: const Text('TOURNAMENT LEADERBOARD')),
       child: SafeArea(
         child: RefreshIndicator(
           onRefresh: () => ref.refresh(leaderboardProvider.future),
@@ -68,9 +69,15 @@ class LeaderboardScreen extends ConsumerWidget {
                 );
               }
 
-              final activeStandings = standings.where((s) => s.status == 'ACTIVE').toList();
-              final cutStandings = standings.where((s) => s.status == 'CUT').toList();
-              final dqStandings = standings.where((s) => s.status == 'DQ').toList();
+              final activeStandings = standings
+                  .where((s) => s.status == 'ACTIVE')
+                  .toList();
+              final cutStandings = standings
+                  .where((s) => s.status == 'CUT')
+                  .toList();
+              final dqStandings = standings
+                  .where((s) => s.status == 'DQ')
+                  .toList();
 
               final tableRows = <Widget>[];
 
@@ -79,7 +86,13 @@ class LeaderboardScreen extends ConsumerWidget {
 
               // Build ACTIVE section
               if (activeStandings.isNotEmpty) {
-                tableRows.add(_buildSectionHeader('ACTIVE COMPETITORS', AppColors.primary, theme));
+                tableRows.add(
+                  _buildSectionHeader(
+                    'ACTIVE COMPETITORS',
+                    AppColors.primary,
+                    theme,
+                  ),
+                );
                 for (final standing in activeStandings) {
                   final tied = _isTied(standing, activeStandings);
                   final rankText = standing.rank != null
@@ -100,7 +113,13 @@ class LeaderboardScreen extends ConsumerWidget {
 
               // Build CUT section
               if (cutStandings.isNotEmpty) {
-                tableRows.add(_buildSectionHeader('CUT / ELIMINATED', AppColors.statusCutBg, theme));
+                tableRows.add(
+                  _buildSectionHeader(
+                    'CUT / ELIMINATED',
+                    AppColors.statusCutBg,
+                    theme,
+                  ),
+                );
                 for (final standing in cutStandings) {
                   tableRows.add(
                     _buildStandingRow(
@@ -116,7 +135,13 @@ class LeaderboardScreen extends ConsumerWidget {
 
               // Build DQ section
               if (dqStandings.isNotEmpty) {
-                tableRows.add(_buildSectionHeader('DISQUALIFIED', AppColors.statusDqBg, theme));
+                tableRows.add(
+                  _buildSectionHeader(
+                    'DISQUALIFIED',
+                    AppColors.statusDqBg,
+                    theme,
+                  ),
+                );
                 for (final standing in dqStandings) {
                   tableRows.add(
                     _buildStandingRow(
@@ -137,15 +162,23 @@ class LeaderboardScreen extends ConsumerWidget {
                   child: BbmCard(
                     padding: EdgeInsets.zero,
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppSpacing.md,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.md,
+                            ),
                             child: Row(
                               children: [
-                                const Icon(Icons.emoji_events_outlined, color: AppColors.primary, size: 20),
+                                const Icon(
+                                  Icons.emoji_events_outlined,
+                                  color: AppColors.primary,
+                                  size: 20,
+                                ),
                                 const SizedBox(width: AppSpacing.sm),
                                 Text(
                                   'OVERALL STANDINGS',
@@ -162,12 +195,35 @@ class LeaderboardScreen extends ConsumerWidget {
                             columnWidths: columnWidths,
                             headers: [
                               Text('Rank', style: theme.textTheme.labelLarge),
-                              Text('Team Name', style: theme.textTheme.labelLarge),
-                              Text('R1', style: theme.textTheme.labelLarge, textAlign: TextAlign.center),
-                              Text('R2', style: theme.textTheme.labelLarge, textAlign: TextAlign.center),
-                              Text('R3', style: theme.textTheme.labelLarge, textAlign: TextAlign.center),
-                              Text('R4', style: theme.textTheme.labelLarge, textAlign: TextAlign.center),
-                              Text('To Par', style: theme.textTheme.labelLarge, textAlign: TextAlign.center),
+                              Text(
+                                'Team Name',
+                                style: theme.textTheme.labelLarge,
+                              ),
+                              Text(
+                                'R1',
+                                style: theme.textTheme.labelLarge,
+                                textAlign: TextAlign.center,
+                              ),
+                              Text(
+                                'R2',
+                                style: theme.textTheme.labelLarge,
+                                textAlign: TextAlign.center,
+                              ),
+                              Text(
+                                'R3',
+                                style: theme.textTheme.labelLarge,
+                                textAlign: TextAlign.center,
+                              ),
+                              Text(
+                                'R4',
+                                style: theme.textTheme.labelLarge,
+                                textAlign: TextAlign.center,
+                              ),
+                              Text(
+                                'To Par',
+                                style: theme.textTheme.labelLarge,
+                                textAlign: TextAlign.center,
+                              ),
                             ],
                             rows: tableRows,
                           ),
@@ -232,22 +288,30 @@ class LeaderboardScreen extends ConsumerWidget {
         ),
         Text(
           _formatScoreToPar(standing.r1),
-          style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: AppColors.textSecondary,
+          ),
           textAlign: TextAlign.center,
         ),
         Text(
           _formatScoreToPar(standing.r2),
-          style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: AppColors.textSecondary,
+          ),
           textAlign: TextAlign.center,
         ),
         Text(
           _formatScoreToPar(standing.r3),
-          style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: AppColors.textSecondary,
+          ),
           textAlign: TextAlign.center,
         ),
         Text(
           _formatScoreToPar(standing.r4),
-          style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: AppColors.textSecondary,
+          ),
           textAlign: TextAlign.center,
         ),
         Text(
@@ -257,8 +321,8 @@ class LeaderboardScreen extends ConsumerWidget {
             color: standing.totalToPar < 0
                 ? AppColors.primaryHover
                 : standing.totalToPar > 0
-                    ? AppColors.scoreBogeyBg
-                    : AppColors.textPrimary,
+                ? AppColors.scoreBogeyBg
+                : AppColors.textPrimary,
           ),
           textAlign: TextAlign.center,
         ),

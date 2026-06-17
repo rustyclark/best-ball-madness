@@ -1,4 +1,3 @@
-
 /// Model representing a team's best ball score for a single hole/round/team.
 class TeamHoleScore {
   final String teamId;
@@ -106,4 +105,3 @@ class ScoreUpdateEvent {
     required this.timestamp,
   });
 }
-

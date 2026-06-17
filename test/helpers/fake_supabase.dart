@@ -31,7 +31,9 @@ class FakeGoTrueClient extends Fake implements GoTrueClient {
     final controller = StreamController<AuthState>.broadcast();
     scheduleMicrotask(() {
       if (!controller.isClosed) {
-        controller.add(AuthState(AuthChangeEvent.initialSession, _currentSession));
+        controller.add(
+          AuthState(AuthChangeEvent.initialSession, _currentSession),
+        );
       }
     });
     final sub = _authStateController.stream.listen(
@@ -238,7 +240,10 @@ class FakeSupabaseClient extends Fake implements SupabaseClient {
   }
 
   @override
-  RealtimeChannel channel(String name, {RealtimeChannelConfig opts = const RealtimeChannelConfig()}) {
+  RealtimeChannel channel(
+    String name, {
+    RealtimeChannelConfig opts = const RealtimeChannelConfig(),
+  }) {
     final ch = FakeRealtimeChannel(name);
     activeChannels.add(ch);
     return ch;
@@ -253,7 +258,8 @@ class FakeSupabaseClient extends Fake implements SupabaseClient {
 
 class FakeRealtimeChannel extends Fake implements RealtimeChannel {
   final String name;
-  final List<void Function(PostgresChangePayload)> postgresChangesCallbacks = [];
+  final List<void Function(PostgresChangePayload)> postgresChangesCallbacks =
+      [];
 
   FakeRealtimeChannel(this.name);
 
@@ -279,7 +285,6 @@ class FakeRealtimeChannel extends Fake implements RealtimeChannel {
     }
     return this;
   }
-
 
   @override
   Future<String> unsubscribe([Duration? timeout]) async {
@@ -326,5 +331,3 @@ class FakePostgresChangesPayload extends Fake implements PostgresChangePayload {
     required this.oldRecord,
   });
 }
-
-

@@ -129,8 +129,10 @@ serve(async (req) => {
           const statsData = await statsRes.json()
           
           const flatStats: Record<string, number> = {}
-          for (const cat of statsData.categories || []) {
-            for (const stat of cat.statistics || []) {
+          const categories = statsData.splits?.categories ?? statsData.categories ?? []
+          for (const cat of categories) {
+            const stats = cat.stats ?? cat.statistics ?? []
+            for (const stat of stats) {
               if (stat.name && typeof stat.value === 'number') {
                 flatStats[stat.name] = stat.value
               }
@@ -205,11 +207,28 @@ serve(async (req) => {
       }
     }
 
+    // 7. Clean up non-entrants: delete any tournament_golfers for this tournament that were not in the fetched field
+    const activeTgIds = results.map(r => r.tournament_golfer_id)
+    if (activeTgIds.length > 0) {
+      const { error: deleteError } = await supabaseClient
+        .from('tournament_golfers')
+        .delete()
+        .eq('tournament_id', tournament.id)
+        .not('id', 'in', `(${activeTgIds.join(',')})`)
+
+      if (deleteError) {
+        console.error(`Error cleaning up non-entrants: ${deleteError.message}`)
+      } else {
+        console.log(`Successfully cleaned up non-entrants for tournament ${tournament.id}`)
+      }
+    }
+
     return new Response(
       JSON.stringify({ 
         message: "Tournament field ingestion completed.", 
         tournament: tournament.name,
-        golfers_ingested: results.length
+        golfers_ingested: results.length,
+        golfers_active: activeTgIds.length
       }), 
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

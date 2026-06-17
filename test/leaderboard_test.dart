@@ -11,34 +11,35 @@ import 'helpers/fake_supabase.dart';
 
 void main() {
   group('Leaderboard Standings Sorting & Formatting Unit Tests', () {
-    test('LeaderboardStanding parses fromJson correctly with joined team name', () {
-      final json = {
-        'team_id': 'team-1',
-        'tournament_id': 't-1',
-        'status': 'ACTIVE',
-        'rank': 1,
-        'total_to_par': -4,
-        'r1': -1,
-        'r2': -3,
-        'r3': 0,
-        'r4': null,
-        'budget_used': 95.0,
-        'teams': {
-          'id': 'team-1',
-          'user_id': 'user-1',
-          'users': {
-            'team_name': 'My Super Team',
-          }
-        }
-      };
+    test(
+      'LeaderboardStanding parses fromJson correctly with joined team name',
+      () {
+        final json = {
+          'team_id': 'team-1',
+          'tournament_id': 't-1',
+          'status': 'ACTIVE',
+          'rank': 1,
+          'total_to_par': -4,
+          'r1': -1,
+          'r2': -3,
+          'r3': 0,
+          'r4': null,
+          'budget_used': 95.0,
+          'teams': {
+            'id': 'team-1',
+            'user_id': 'user-1',
+            'users': {'team_name': 'My Super Team'},
+          },
+        };
 
-      final standing = LeaderboardStanding.fromJson(json);
-      expect(standing.teamId, 'team-1');
-      expect(standing.teamName, 'My Super Team');
-      expect(standing.totalToPar, -4);
-      expect(standing.r1, -1);
-      expect(standing.r4, isNull);
-    });
+        final standing = LeaderboardStanding.fromJson(json);
+        expect(standing.teamId, 'team-1');
+        expect(standing.teamName, 'My Super Team');
+        expect(standing.totalToPar, -4);
+        expect(standing.r1, -1);
+        expect(standing.r4, isNull);
+      },
+    );
 
     test('LeaderboardStanding handles missing teams/users gracefully', () {
       final json = {
@@ -106,11 +107,15 @@ void main() {
               'location': 'Augusta, GA',
               'par': 72,
               'yards': 7400,
-              'start_date': DateTime.now().subtract(const Duration(days: 1)).toIso8601String(),
-              'end_date': DateTime.now().add(const Duration(days: 2)).toIso8601String(),
+              'start_date': DateTime.now()
+                  .subtract(const Duration(days: 1))
+                  .toIso8601String(),
+              'end_date': DateTime.now()
+                  .add(const Duration(days: 2))
+                  .toIso8601String(),
               'status': 'IN_PROGRESS',
               'current_round': 2,
-            }
+            },
           ],
           'leaderboard_standings': [
             {
@@ -127,8 +132,8 @@ void main() {
               'teams': {
                 'id': 'team-1',
                 'user_id': 'user-1',
-                'users': {'team_name': 'Team Active Two'}
-              }
+                'users': {'team_name': 'Team Active Two'},
+              },
             },
             {
               'team_id': 'team-2',
@@ -144,8 +149,8 @@ void main() {
               'teams': {
                 'id': 'team-2',
                 'user_id': 'user-2',
-                'users': {'team_name': 'Team Active One'}
-              }
+                'users': {'team_name': 'Team Active One'},
+              },
             },
             {
               'team_id': 'team-3',
@@ -161,8 +166,8 @@ void main() {
               'teams': {
                 'id': 'team-3',
                 'user_id': 'user-3',
-                'users': {'team_name': 'Team Cut One'}
-              }
+                'users': {'team_name': 'Team Cut One'},
+              },
             },
             {
               'team_id': 'team-4',
@@ -178,9 +183,9 @@ void main() {
               'teams': {
                 'id': 'team-4',
                 'user_id': 'user-4',
-                'users': {'team_name': 'Team DQ One'}
-              }
-            }
+                'users': {'team_name': 'Team DQ One'},
+              },
+            },
           ],
           'teams': [
             {
@@ -188,8 +193,8 @@ void main() {
               'user_id': 'user-3',
               'tournament_id': 't-1',
               'status': 'CUT',
-              'users': {'team_name': 'Team Cut One'}
-            }
+              'users': {'team_name': 'Team Cut One'},
+            },
           ],
           'team_golfers': [
             {'tournament_golfer_id': 'tg-1'},
@@ -203,7 +208,7 @@ void main() {
               'par': 4,
               'best_ball_score': 5,
               'hole_to_par': 1,
-            }
+            },
           ],
           'hole_scores': [],
           'tee_times': [],
@@ -218,39 +223,42 @@ void main() {
           activeTournamentProvider.overrideWith((ref) => mockTournament),
           golferListProvider.overrideWith((ref) => mockGolfers),
         ],
-        child: const MaterialApp(
-          home: LeaderboardScreen(),
-        ),
+        child: const MaterialApp(home: LeaderboardScreen()),
       );
     }
 
-    testWidgets('Leaderboard groups and sorts correctly (ACTIVE -> CUT -> DQ)', (WidgetTester tester) async {
-      await tester.pumpWidget(createLeaderboardWidget());
-      await tester.pumpAndSettle();
+    testWidgets(
+      'Leaderboard groups and sorts correctly (ACTIVE -> CUT -> DQ)',
+      (WidgetTester tester) async {
+        await tester.pumpWidget(createLeaderboardWidget());
+        await tester.pumpAndSettle();
 
-      // Verify that all section headers exist
-      expect(find.text('ACTIVE COMPETITORS'), findsOneWidget);
-      expect(find.text('CUT / ELIMINATED'), findsOneWidget);
-      expect(find.text('DISQUALIFIED'), findsOneWidget);
+        // Verify that all section headers exist
+        expect(find.text('ACTIVE COMPETITORS'), findsOneWidget);
+        expect(find.text('CUT / ELIMINATED'), findsOneWidget);
+        expect(find.text('DISQUALIFIED'), findsOneWidget);
 
-      // Verify team names render
-      expect(find.text('Team Active One'), findsOneWidget);
-      expect(find.text('Team Active Two'), findsOneWidget);
-      expect(find.text('Team Cut One'), findsOneWidget);
-      expect(find.text('Team DQ One'), findsOneWidget);
+        // Verify team names render
+        expect(find.text('Team Active One'), findsOneWidget);
+        expect(find.text('Team Active Two'), findsOneWidget);
+        expect(find.text('Team Cut One'), findsOneWidget);
+        expect(find.text('Team DQ One'), findsOneWidget);
 
-      // Verify scores format relative to par correctly
-      expect(find.text('-5'), findsOneWidget);
-      expect(find.text('-2'), findsNWidgets(2));
-      expect(find.text('+4'), findsOneWidget);
-      expect(find.text('+10'), findsOneWidget);
+        // Verify scores format relative to par correctly
+        expect(find.text('-5'), findsOneWidget);
+        expect(find.text('-2'), findsNWidgets(2));
+        expect(find.text('+4'), findsOneWidget);
+        expect(find.text('+10'), findsOneWidget);
 
-      // Verify ranks render correctly
-      expect(find.text('1'), findsOneWidget);
-      expect(find.text('2'), findsOneWidget);
-    });
+        // Verify ranks render correctly
+        expect(find.text('1'), findsOneWidget);
+        expect(find.text('2'), findsOneWidget);
+      },
+    );
 
-    testWidgets('Tied ACTIVE teams display the T- prefix correctly', (WidgetTester tester) async {
+    testWidgets('Tied ACTIVE teams display the T- prefix correctly', (
+      WidgetTester tester,
+    ) async {
       // Set two active teams to rank 1
       fakeSupabase.mockData['leaderboard_standings'] = [
         {
@@ -265,8 +273,8 @@ void main() {
           'teams': {
             'id': 'team-1',
             'user_id': 'user-1',
-            'users': {'team_name': 'Team A'}
-          }
+            'users': {'team_name': 'Team A'},
+          },
         },
         {
           'team_id': 'team-2',
@@ -280,8 +288,8 @@ void main() {
           'teams': {
             'id': 'team-2',
             'user_id': 'user-2',
-            'users': {'team_name': 'Team B'}
-          }
+            'users': {'team_name': 'Team B'},
+          },
         },
         {
           'team_id': 'team-3',
@@ -295,9 +303,9 @@ void main() {
           'teams': {
             'id': 'team-3',
             'user_id': 'user-3',
-            'users': {'team_name': 'Team C'}
-          }
-        }
+            'users': {'team_name': 'Team C'},
+          },
+        },
       ];
 
       await tester.pumpWidget(createLeaderboardWidget());
@@ -308,74 +316,82 @@ void main() {
       expect(find.text('3'), findsOneWidget);
     });
 
-    testWidgets('Clicking row successfully displays the competitor read-only scorecard', (WidgetTester tester) async {
-      await tester.pumpWidget(createLeaderboardWidget());
-      await tester.pumpAndSettle();
+    testWidgets(
+      'Clicking row successfully displays the competitor read-only scorecard',
+      (WidgetTester tester) async {
+        await tester.pumpWidget(createLeaderboardWidget());
+        await tester.pumpAndSettle();
 
-      // Tap on the row containing 'Team Cut One'
-      await tester.tap(find.text('Team Cut One'));
-      await tester.pumpAndSettle();
+        // Tap on the row containing 'Team Cut One'
+        await tester.tap(find.text('Team Cut One'));
+        await tester.pumpAndSettle();
 
-      // Verify navigation to ScorecardScreen and that the competitor's app bar title is shown
-      expect(find.text('TEAM CUT ONE SCORECARD'), findsOneWidget);
-    });
+        // Verify navigation to ScorecardScreen and that the competitor's app bar title is shown
+        expect(find.text('TEAM CUT ONE SCORECARD'), findsOneWidget);
+      },
+    );
 
-    testWidgets('Realtime updates to leaderboard_standings rebuild the leaderboard UI live', (WidgetTester tester) async {
-      await tester.pumpWidget(createLeaderboardWidget());
-      await tester.pumpAndSettle();
+    testWidgets(
+      'Realtime updates to leaderboard_standings rebuild the leaderboard UI live',
+      (WidgetTester tester) async {
+        await tester.pumpWidget(createLeaderboardWidget());
+        await tester.pumpAndSettle();
 
-      // Verify original score -5 is displayed
-      expect(find.text('-5'), findsOneWidget);
-      expect(find.text('-9'), findsNothing);
+        // Verify original score -5 is displayed
+        expect(find.text('-5'), findsOneWidget);
+        expect(find.text('-9'), findsNothing);
 
-      // Update mock data
-      fakeSupabase.mockData['leaderboard_standings'] = [
-        {
-          'team_id': 'team-1',
-          'tournament_id': 't-1',
-          'status': 'ACTIVE',
-          'rank': 2,
-          'total_to_par': -2,
-          'budget_used': 95.0,
-          'teams': {
-            'id': 'team-1',
-            'user_id': 'user-1',
-            'users': {'team_name': 'Team Active Two'}
-          }
-        },
-        {
-          'team_id': 'team-2',
-          'tournament_id': 't-1',
-          'status': 'ACTIVE',
-          'rank': 1,
-          'total_to_par': -9, // Changed from -5 to -9
-          'budget_used': 98.0,
-          'teams': {
-            'id': 'team-2',
-            'user_id': 'user-2',
-            'users': {'team_name': 'Team Active One'}
-          }
-        }
-      ];
+        // Update mock data
+        fakeSupabase.mockData['leaderboard_standings'] = [
+          {
+            'team_id': 'team-1',
+            'tournament_id': 't-1',
+            'status': 'ACTIVE',
+            'rank': 2,
+            'total_to_par': -2,
+            'budget_used': 95.0,
+            'teams': {
+              'id': 'team-1',
+              'user_id': 'user-1',
+              'users': {'team_name': 'Team Active Two'},
+            },
+          },
+          {
+            'team_id': 'team-2',
+            'tournament_id': 't-1',
+            'status': 'ACTIVE',
+            'rank': 1,
+            'total_to_par': -9, // Changed from -5 to -9
+            'budget_used': 98.0,
+            'teams': {
+              'id': 'team-2',
+              'user_id': 'user-2',
+              'users': {'team_name': 'Team Active One'},
+            },
+          },
+        ];
 
-      // Retrieve the active leaderboard realtime channel
-      final channel = fakeSupabase.activeChannels.firstWhere((c) => c.name.startsWith('leaderboard-realtime'));
+        // Retrieve the active leaderboard realtime channel
+        final channel = fakeSupabase.activeChannels.firstWhere(
+          (c) => c.name.startsWith('leaderboard-realtime'),
+        );
 
-      // Trigger realtime update event
-      channel.triggerPostgresChange(
-        event: PostgresChangeEvent.update,
-        schema: 'public',
-        table: 'leaderboard_standings',
-        newRecord: {},
-        oldRecord: {},
-      );
+        // Trigger realtime update event
+        channel.triggerPostgresChange(
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: 'leaderboard_standings',
+          newRecord: {},
+          oldRecord: {},
+        );
 
-      // Let UI rebuild and resolve data
-      await tester.pumpAndSettle();
+        // Let UI rebuild and resolve data
+        await tester.pumpAndSettle();
 
-      // Verify new score -9 is now displayed, and -5 is gone
-      expect(find.text('-9'), findsOneWidget);
-      expect(find.text('-5'), findsNothing);
-    });
+        // Verify new score -9 is now displayed, and -5 is gone
+        expect(find.text('-9'), findsOneWidget);
+        expect(find.text('-5'), findsNothing);
+      },
+    );
   });
 }
