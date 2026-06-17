@@ -363,64 +363,65 @@ void main() {
     expect(find.text('WD'), findsOneWidget);
   });
 
-  testWidgets('GolferTable displays all golfers without pagination and filters by search query', (
-    WidgetTester tester,
-  ) async {
-    await tester.binding.setSurfaceSize(const Size(800, 5000));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
+  testWidgets(
+    'GolferTable displays all golfers without pagination and filters by search query',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 5000));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    final manyGolfers = List.generate(55, (index) {
-      return TournamentGolfer(
-        id: 'tg-$index',
-        tournamentId: 't-1',
-        golferProfileId: 'gp-$index',
-        price: 20.00,
-        status: 'ACTIVE',
-        profile: GolferProfile(
-          id: 'gp-$index',
-          espnId: '$index',
-          name: index == 10 ? 'Rory Test' : 'Golfer Name $index',
-        ),
-      );
-    });
+      final manyGolfers = List.generate(55, (index) {
+        return TournamentGolfer(
+          id: 'tg-$index',
+          tournamentId: 't-1',
+          golferProfileId: 'gp-$index',
+          price: 20.00,
+          status: 'ACTIVE',
+          profile: GolferProfile(
+            id: 'gp-$index',
+            espnId: '$index',
+            name: index == 10 ? 'Rory Test' : 'Golfer Name $index',
+          ),
+        );
+      });
 
-    await tester.pumpWidget(
-      ProviderScope(
-        child: MaterialApp(
-          home: Scaffold(
-            body: SizedBox(
-              height: 5000,
-              child: GolferTable(golfers: manyGolfers, isLocked: false),
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: SizedBox(
+                height: 5000,
+                child: GolferTable(golfers: manyGolfers, isLocked: false),
+              ),
             ),
           ),
         ),
-      ),
-    );
+      );
 
-    await tester.pumpAndSettle();
+      await tester.pumpAndSettle();
 
-    // Verify page text (pagination) is NOT present
-    expect(find.textContaining('PAGE 1'), findsNothing);
+      // Verify page text (pagination) is NOT present
+      expect(find.textContaining('PAGE 1'), findsNothing);
 
-    // Verify first golfer is shown
-    expect(find.text('Golfer Name 0'), findsOneWidget);
+      // Verify first golfer is shown
+      expect(find.text('Golfer Name 0'), findsOneWidget);
 
-    // Verify 55th golfer (index 54) is shown since pagination is removed
-    expect(find.text('Golfer Name 54'), findsOneWidget);
+      // Verify 55th golfer (index 54) is shown since pagination is removed
+      expect(find.text('Golfer Name 54'), findsOneWidget);
 
-    // Test Search Filter: Search for 'Rory'
-    final searchField = find.byType(TextField);
-    expect(searchField, findsOneWidget);
+      // Test Search Filter: Search for 'Rory'
+      final searchField = find.byType(TextField);
+      expect(searchField, findsOneWidget);
 
-    await tester.enterText(searchField, 'Rory');
-    await tester.pumpAndSettle();
+      await tester.enterText(searchField, 'Rory');
+      await tester.pumpAndSettle();
 
-    // 'Rory Test' should still be visible
-    expect(find.text('Rory Test'), findsOneWidget);
+      // 'Rory Test' should still be visible
+      expect(find.text('Rory Test'), findsOneWidget);
 
-    // 'Golfer Name 0' should now be hidden
-    expect(find.text('Golfer Name 0'), findsNothing);
-  });
+      // 'Golfer Name 0' should now be hidden
+      expect(find.text('Golfer Name 0'), findsNothing);
+    },
+  );
 }
 
 class TestDraftStateNotifier extends DraftStateNotifier {

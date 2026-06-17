@@ -51,7 +51,9 @@ class _GolferTableState extends ConsumerState<GolferTable> {
     // Apply Search Filter (only if not in preview/limit mode)
     if (widget.limit == null && _searchQuery.isNotEmpty) {
       final query = _searchQuery.toLowerCase();
-      list = list.where((g) => g.profile.name.toLowerCase().contains(query)).toList();
+      list = list
+          .where((g) => g.profile.name.toLowerCase().contains(query))
+          .toList();
     }
 
     // Apply Sorting
@@ -115,7 +117,10 @@ class _GolferTableState extends ConsumerState<GolferTable> {
             : null,
         filled: true,
         fillColor: AppColors.alternateRow,
-        contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: AppSpacing.md),
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 0,
+          horizontal: AppSpacing.md,
+        ),
         border: OutlineInputBorder(
           borderRadius: AppSpacing.borderRadiusLg,
           borderSide: const BorderSide(color: AppColors.border),
@@ -158,7 +163,9 @@ class _GolferTableState extends ConsumerState<GolferTable> {
                   Text(
                     label,
                     style: TextStyle(
-                      color: isSelected ? Colors.white : AppColors.textSecondary,
+                      color: isSelected
+                          ? Colors.white
+                          : AppColors.textSecondary,
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
                     ),
@@ -227,8 +234,16 @@ class _GolferTableState extends ConsumerState<GolferTable> {
                   Padding(
                     padding: const EdgeInsets.only(right: AppSpacing.sm),
                     child: isSelected
-                        ? const Icon(Icons.check_circle, color: AppColors.primary, size: 24)
-                        : const Icon(Icons.lock_outline, color: AppColors.textMuted, size: 20),
+                        ? const Icon(
+                            Icons.check_circle,
+                            color: AppColors.primary,
+                            size: 24,
+                          )
+                        : const Icon(
+                            Icons.lock_outline,
+                            color: AppColors.textMuted,
+                            size: 20,
+                          ),
                   )
                 else
                   Padding(
@@ -236,13 +251,19 @@ class _GolferTableState extends ConsumerState<GolferTable> {
                     child: GestureDetector(
                       onTap: () {
                         if (isSelected) {
-                          ref.read(draftStateNotifierProvider.notifier).removeGolfer(golfer);
+                          ref
+                              .read(draftStateNotifierProvider.notifier)
+                              .removeGolfer(golfer);
                         } else {
-                          final success = ref.read(draftStateNotifierProvider.notifier).addGolfer(golfer);
+                          final success = ref
+                              .read(draftStateNotifierProvider.notifier)
+                              .addGolfer(golfer);
                           if (!success) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text('Roster is already full! Remove a golfer first.'),
+                                content: Text(
+                                  'Roster is already full! Remove a golfer first.',
+                                ),
                                 duration: Duration(seconds: 2),
                               ),
                             );
@@ -250,8 +271,16 @@ class _GolferTableState extends ConsumerState<GolferTable> {
                         }
                       },
                       child: isSelected
-                          ? const Icon(Icons.check_circle, color: AppColors.accent, size: 26)
-                          : const Icon(Icons.add_circle_outline, color: AppColors.primary, size: 26),
+                          ? const Icon(
+                              Icons.check_circle,
+                              color: AppColors.accent,
+                              size: 26,
+                            )
+                          : const Icon(
+                              Icons.add_circle_outline,
+                              color: AppColors.primary,
+                              size: 26,
+                            ),
                     ),
                   ),
                 // Golfer details
@@ -302,7 +331,9 @@ class _GolferTableState extends ConsumerState<GolferTable> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      golfer.profile.worldRank != null ? 'WR ${golfer.profile.worldRank}' : 'WR -',
+                      golfer.profile.worldRank != null
+                          ? 'WR ${golfer.profile.worldRank}'
+                          : 'WR -',
                       style: const TextStyle(
                         color: AppColors.textSecondary,
                         fontSize: 11,
@@ -312,7 +343,9 @@ class _GolferTableState extends ConsumerState<GolferTable> {
                 ),
                 const SizedBox(width: AppSpacing.xs),
                 Icon(
-                  isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                  isExpanded
+                      ? Icons.keyboard_arrow_up
+                      : Icons.keyboard_arrow_down,
                   color: AppColors.textMuted,
                   size: 20,
                 ),
@@ -323,7 +356,11 @@ class _GolferTableState extends ConsumerState<GolferTable> {
         AnimatedCrossFade(
           firstChild: const SizedBox.shrink(),
           secondChild: Padding(
-            padding: const EdgeInsets.only(bottom: AppSpacing.sm, left: 34, right: 8), // indent under name
+            padding: const EdgeInsets.only(
+              bottom: AppSpacing.sm,
+              left: 34,
+              right: 8,
+            ), // indent under name
             child: Container(
               padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
@@ -339,12 +376,22 @@ class _GolferTableState extends ConsumerState<GolferTable> {
                     children: [
                       const Text(
                         'SCORING AVERAGE',
-                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        golfer.profile.scoringAvg != null ? golfer.profile.scoringAvg!.toStringAsFixed(1) : '-',
-                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                        golfer.profile.scoringAvg != null
+                            ? golfer.profile.scoringAvg!.toStringAsFixed(1)
+                            : '-',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
                     ],
                   ),
@@ -353,12 +400,20 @@ class _GolferTableState extends ConsumerState<GolferTable> {
                     children: [
                       const Text(
                         'STATS (W / T10 / CUTS)',
-                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         '${golfer.profile.wins ?? 0}W / ${golfer.profile.top10s ?? 0}T10 / ${golfer.profile.cutsMade ?? 0}C',
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
                     ],
                   ),
@@ -366,7 +421,9 @@ class _GolferTableState extends ConsumerState<GolferTable> {
               ),
             ),
           ),
-          crossFadeState: isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+          crossFadeState: isExpanded
+              ? CrossFadeState.showSecond
+              : CrossFadeState.showFirst,
           duration: const Duration(milliseconds: 150),
         ),
         const Divider(height: 1, color: AppColors.border),
@@ -405,7 +462,9 @@ class _GolferTableState extends ConsumerState<GolferTable> {
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
             child: Center(
               child: Text(
-                _searchQuery.isNotEmpty ? 'No golfers match "$_searchQuery"' : 'No golfers available',
+                _searchQuery.isNotEmpty
+                    ? 'No golfers match "$_searchQuery"'
+                    : 'No golfers available',
                 style: const TextStyle(color: AppColors.textSecondary),
               ),
             ),
@@ -416,7 +475,9 @@ class _GolferTableState extends ConsumerState<GolferTable> {
               itemCount: sortedGolfers.length,
               itemBuilder: (context, index) {
                 final golfer = sortedGolfers[index];
-                final isSelected = selectedGolfers.any((g) => g.id == golfer.id);
+                final isSelected = selectedGolfers.any(
+                  (g) => g.id == golfer.id,
+                );
                 final isExpanded = _expandedGolferIds.contains(golfer.id);
 
                 return _buildGolferRow(golfer, isSelected, isExpanded, theme);

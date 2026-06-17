@@ -161,7 +161,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               // Lock Time Banner (Post-lock only)
               if (isLocked && activeTournament.lockTimeUtc != null) ...[
                 _buildBanner(
-                  text: 'Drafting has closed. Roster locked on ${formatLockTime(activeTournament.lockTimeUtc!)}.',
+                  text:
+                      'Drafting has closed. Roster locked on ${formatLockTime(activeTournament.lockTimeUtc!)}.',
                   bgColor: AppColors.border,
                   textColor: AppColors.textSecondary,
                   icon: Icons.lock_clock,
@@ -172,7 +173,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               // WD Warning Banner (Pre-lock only)
               if (showWdBanner) ...[
                 _buildBanner(
-                  text: 'WARNING: A golfer on your team has withdrawn (WD). Please update your roster before lock time!',
+                  text:
+                      'WARNING: A golfer on your team has withdrawn (WD). Please update your roster before lock time!',
                   bgColor: Colors.amber,
                   textColor: Colors.amber,
                   icon: Icons.warning_amber_rounded,
@@ -299,11 +301,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   data: (list) => Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      GolferTable(
-                        golfers: list,
-                        isLocked: isLocked,
-                        limit: 5,
-                      ),
+                      GolferTable(golfers: list, isLocked: isLocked, limit: 5),
                       const SizedBox(height: AppSpacing.md),
                       ElevatedButton(
                         onPressed: () {
@@ -444,10 +442,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           Expanded(
             child: Text(
               text,
-              style: TextStyle(
-                color: textColor,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -464,8 +459,18 @@ String formatLockTime(DateTime dateTime) {
   final displayHour = hour % 12 == 0 ? 12 : hour % 12;
 
   final months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
   final month = months[localTime.month - 1];
   final day = localTime.day;

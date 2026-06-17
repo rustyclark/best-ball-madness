@@ -5,17 +5,31 @@ class AppColors {
 
   // PGA Tour / Golfer-Centric Core Palette
   static const Color background = Color(0xFFFFFFFF);
-  static const Color cardBg = Color(0xFFF8FAFC); // Slate-50 for subtle container contrast
-  static const Color border = Color(0xFFE2E8F0); // Slate-200 for thin premium dividers
+  static const Color cardBg = Color(
+    0xFFF8FAFC,
+  ); // Slate-50 for subtle container contrast
+  static const Color border = Color(
+    0xFFE2E8F0,
+  ); // Slate-200 for thin premium dividers
   static const Color primary = Color(0xFF003C80); // PGA Tour Deep Navy Blue
   static const Color primaryHover = Color(0xFF0056B3); // Brighter Royal Blue
-  static const Color accent = Color(0xFF047857); // Golf Emerald Green (accent highlight)
-  static const Color alternateRow = Color(0xFFF1F5F9); // Slate-100 for alternating scorecard rows
+  static const Color accent = Color(
+    0xFF047857,
+  ); // Golf Emerald Green (accent highlight)
+  static const Color alternateRow = Color(
+    0xFFF1F5F9,
+  ); // Slate-100 for alternating scorecard rows
 
   // Text Colors (High Contrast on White/Slate-50)
-  static const Color textPrimary = Color(0xFF0F172A); // Slate-900 (main body text)
-  static const Color textSecondary = Color(0xFF475569); // Slate-600 (subtitles and secondary text)
-  static const Color textMuted = Color(0xFF94A3B8); // Slate-400 (hints and placeholders)
+  static const Color textPrimary = Color(
+    0xFF0F172A,
+  ); // Slate-900 (main body text)
+  static const Color textSecondary = Color(
+    0xFF475569,
+  ); // Slate-600 (subtitles and secondary text)
+  static const Color textMuted = Color(
+    0xFF94A3B8,
+  ); // Slate-400 (hints and placeholders)
 
   // Score Color Constants (Softer and golfer-friendly, not neon)
   // Eagle or better: score - par <= -2

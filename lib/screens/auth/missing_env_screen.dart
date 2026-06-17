@@ -38,17 +38,17 @@ class MissingEnvScreen extends StatelessWidget {
                   Text(
                     'Configuration Required',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
-                        ),
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: AppSpacing.xs),
                   Text(
                     'Best Ball Madness needs Supabase to start.',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
+                      color: AppColors.textSecondary,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: AppSpacing.lg),
@@ -88,12 +88,18 @@ class MissingEnvScreen extends StatelessWidget {
                         const SizedBox(height: AppSpacing.sm),
                         const Text(
                           '1. Verify your .env file exists in the best-ball-madness directory. If not, create it by copying .env.example.',
-                          style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                         const SizedBox(height: AppSpacing.xs),
                         const Text(
                           '2. Run the application from your terminal using:',
-                          style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                         const SizedBox(height: AppSpacing.xs),
                         _CodeSnippetBlock(
@@ -111,7 +117,10 @@ class MissingEnvScreen extends StatelessWidget {
                         const SizedBox(height: AppSpacing.xxs),
                         const Text(
                           'If you are testing on an Android Emulator, make sure SUPABASE_URL in your .env points to the emulator loopback address:',
-                          style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                         const SizedBox(height: AppSpacing.xxs),
                         _CodeSnippetBlock(
@@ -129,7 +138,10 @@ class MissingEnvScreen extends StatelessWidget {
                         const SizedBox(height: AppSpacing.xxs),
                         const Text(
                           'For iOS simulator or web, use the standard local Supabase address:',
-                          style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                         const SizedBox(height: AppSpacing.xxs),
                         _CodeSnippetBlock(

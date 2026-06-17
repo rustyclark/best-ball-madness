@@ -137,16 +137,10 @@ class BbmTableRow extends StatelessWidget {
     if (onTap != null) {
       return Material(
         color: backgroundColor ?? Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          child: rowContent,
-        ),
+        child: InkWell(onTap: onTap, child: rowContent),
       );
     }
 
-    return Container(
-      color: backgroundColor,
-      child: rowContent,
-    );
+    return Container(color: backgroundColor, child: rowContent);
   }
 }

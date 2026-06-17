@@ -1,4 +1,3 @@
-
 /// Model representing a tournament.
 class Tournament {
   final String id;
@@ -179,4 +178,3 @@ class UserTeam {
     );
   }
 }
-

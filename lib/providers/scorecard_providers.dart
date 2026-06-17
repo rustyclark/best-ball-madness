@@ -34,10 +34,12 @@ class TeamGolfersHoleScoresNotifier extends AsyncNotifier<List<HoleScore>> {
   void updateScore(HoleScore newScore) {
     if (!state.hasValue) return;
     final currentData = state.value!;
-    final index = currentData.indexWhere((s) =>
-        s.tournamentGolferId == newScore.tournamentGolferId &&
-        s.round == newScore.round &&
-        s.hole == newScore.hole);
+    final index = currentData.indexWhere(
+      (s) =>
+          s.tournamentGolferId == newScore.tournamentGolferId &&
+          s.round == newScore.round &&
+          s.hole == newScore.hole,
+    );
 
     final List<HoleScore> list;
     if (index != -1) {
@@ -51,9 +53,10 @@ class TeamGolfersHoleScoresNotifier extends AsyncNotifier<List<HoleScore>> {
 }
 
 /// Provider for individual hole scores of user team golfers.
-final teamGolfersHoleScoresProvider = AsyncNotifierProvider.autoDispose.family<TeamGolfersHoleScoresNotifier, List<HoleScore>, int>((arg) {
-  return TeamGolfersHoleScoresNotifier(arg);
-});
+final teamGolfersHoleScoresProvider = AsyncNotifierProvider.autoDispose
+    .family<TeamGolfersHoleScoresNotifier, List<HoleScore>, int>((arg) {
+      return TeamGolfersHoleScoresNotifier(arg);
+    });
 
 /// Notifier managing the user's team's best-ball hole scores for a specific round.
 class UserTeamScoreNotifier extends AsyncNotifier<List<TeamHoleScore>> {
@@ -82,7 +85,10 @@ class UserTeamScoreNotifier extends AsyncNotifier<List<TeamHoleScore>> {
 
   void updateBestBall(int hole, int par, List<HoleScore> golferScores) {
     if (!state.hasValue) return;
-    final scoresForHole = golferScores.where((s) => s.hole == hole).map((s) => s.score).toList();
+    final scoresForHole = golferScores
+        .where((s) => s.hole == hole)
+        .map((s) => s.score)
+        .toList();
     if (scoresForHole.isEmpty) return;
     final newBestScore = scoresForHole.reduce((a, b) => a < b ? a : b);
 
@@ -110,26 +116,28 @@ class UserTeamScoreNotifier extends AsyncNotifier<List<TeamHoleScore>> {
 }
 
 /// Provider for user team best ball scores.
-final userTeamScoreProvider = AsyncNotifierProvider.autoDispose.family<UserTeamScoreNotifier, List<TeamHoleScore>, int>((arg) {
-  return UserTeamScoreNotifier(arg);
-});
+final userTeamScoreProvider = AsyncNotifierProvider.autoDispose
+    .family<UserTeamScoreNotifier, List<TeamHoleScore>, int>((arg) {
+      return UserTeamScoreNotifier(arg);
+    });
 
 /// Fetches tee times for the user's team's golfers in a specific round.
-final teamGolfersTeeTimesProvider = FutureProvider.autoDispose.family<List<TeeTime>, int>((ref, round) async {
-  final client = ref.watch(supabaseClientProvider);
-  final userTeam = ref.watch(userTeamProvider).value;
-  if (userTeam == null || userTeam.golferIds.isEmpty) return [];
+final teamGolfersTeeTimesProvider = FutureProvider.autoDispose
+    .family<List<TeeTime>, int>((ref, round) async {
+      final client = ref.watch(supabaseClientProvider);
+      final userTeam = ref.watch(userTeamProvider).value;
+      if (userTeam == null || userTeam.golferIds.isEmpty) return [];
 
-  final response = await client
-      .from('tee_times')
-      .select()
-      .inFilter('tournament_golfer_id', userTeam.golferIds)
-      .eq('round', round);
+      final response = await client
+          .from('tee_times')
+          .select()
+          .inFilter('tournament_golfer_id', userTeam.golferIds)
+          .eq('round', round);
 
-  return (response as List)
-      .map((json) => TeeTime.fromJson(json as Map<String, dynamic>))
-      .toList();
-});
+      return (response as List)
+          .map((json) => TeeTime.fromJson(json as Map<String, dynamic>))
+          .toList();
+    });
 
 /// Notifier managing the last realtime score update event.
 class LastRealtimeScoreUpdateNotifier extends Notifier<ScoreUpdateEvent?> {
@@ -142,12 +150,16 @@ class LastRealtimeScoreUpdateNotifier extends Notifier<ScoreUpdateEvent?> {
 }
 
 /// Stores the latest realtime score update event to drive micro-animations.
-final lastRealtimeScoreUpdateProvider = NotifierProvider<LastRealtimeScoreUpdateNotifier, ScoreUpdateEvent?>(() {
-  return LastRealtimeScoreUpdateNotifier();
-});
+final lastRealtimeScoreUpdateProvider =
+    NotifierProvider<LastRealtimeScoreUpdateNotifier, ScoreUpdateEvent?>(() {
+      return LastRealtimeScoreUpdateNotifier();
+    });
 
 /// Subscribes to Supabase Realtime changes on the `hole_scores` table for the team's golfers.
-final scorecardSubscriptionProvider = Provider.autoDispose.family<void, int>((ref, round) {
+final scorecardSubscriptionProvider = Provider.autoDispose.family<void, int>((
+  ref,
+  round,
+) {
   final client = ref.watch(supabaseClientProvider);
   final userTeam = ref.watch(userTeamProvider).value;
   if (userTeam == null) return;
@@ -158,45 +170,60 @@ final scorecardSubscriptionProvider = Provider.autoDispose.family<void, int>((re
   final channelName = 'scorecard-realtime-$round-${userTeam.id}';
   final channel = client.channel(channelName);
 
-  channel.onPostgresChanges(
-    event: PostgresChangeEvent.all,
-    schema: 'public',
-    table: 'hole_scores',
-    filter: PostgresChangeFilter(
-      type: PostgresChangeFilterType.inFilter,
-      column: 'tournament_golfer_id',
-      value: golferIds,
-    ),
-    callback: (payload) {
-      final record = payload.newRecord.isNotEmpty ? payload.newRecord : payload.oldRecord;
-      if (record.isNotEmpty) {
-        final golferId = record['tournament_golfer_id'] as String?;
-        final recRound = record['round'] as int?;
-        if (golferId != null && golferIds.contains(golferId) && recRound == round) {
-          // Update last realtime score event for cell pulse animation
-          ref.read(lastRealtimeScoreUpdateProvider.notifier).update(ScoreUpdateEvent(
-            tournamentGolferId: golferId,
-            hole: record['hole'] as int,
-            scoreType: record['score_type'] as String,
-            timestamp: DateTime.now(),
-          ));
+  channel
+      .onPostgresChanges(
+        event: PostgresChangeEvent.all,
+        schema: 'public',
+        table: 'hole_scores',
+        filter: PostgresChangeFilter(
+          type: PostgresChangeFilterType.inFilter,
+          column: 'tournament_golfer_id',
+          value: golferIds,
+        ),
+        callback: (payload) {
+          final record = payload.newRecord.isNotEmpty
+              ? payload.newRecord
+              : payload.oldRecord;
+          if (record.isNotEmpty) {
+            final golferId = record['tournament_golfer_id'] as String?;
+            final recRound = record['round'] as int?;
+            if (golferId != null &&
+                golferIds.contains(golferId) &&
+                recRound == round) {
+              // Update last realtime score event for cell pulse animation
+              ref
+                  .read(lastRealtimeScoreUpdateProvider.notifier)
+                  .update(
+                    ScoreUpdateEvent(
+                      tournamentGolferId: golferId,
+                      hole: record['hole'] as int,
+                      scoreType: record['score_type'] as String,
+                      timestamp: DateTime.now(),
+                    ),
+                  );
 
-          final newScore = HoleScore.fromJson(record);
+              final newScore = HoleScore.fromJson(record);
 
-          // Update golfer score incrementally
-          ref.read(teamGolfersHoleScoresProvider(round).notifier).updateScore(newScore);
+              // Update golfer score incrementally
+              ref
+                  .read(teamGolfersHoleScoresProvider(round).notifier)
+                  .updateScore(newScore);
 
-          // Get the latest golfer scores to update team best ball
-          final updatedGolferScores = ref.read(teamGolfersHoleScoresProvider(round)).value ?? [];
-          ref.read(userTeamScoreProvider(round).notifier).updateBestBall(
-            newScore.hole,
-            newScore.par,
-            updatedGolferScores,
-          );
-        }
-      }
-    },
-  ).subscribe();
+              // Get the latest golfer scores to update team best ball
+              final updatedGolferScores =
+                  ref.read(teamGolfersHoleScoresProvider(round)).value ?? [];
+              ref
+                  .read(userTeamScoreProvider(round).notifier)
+                  .updateBestBall(
+                    newScore.hole,
+                    newScore.par,
+                    updatedGolferScores,
+                  );
+            }
+          }
+        },
+      )
+      .subscribe();
 
   ref.onDispose(() async {
     await client.removeChannel(channel);
@@ -213,17 +240,23 @@ final teamStatusProvider = StreamProvider.autoDispose<String>((ref) {
   controller.add(userTeam.status);
 
   final channel = client.channel('team-status-${userTeam.id}');
-  channel.onPostgresChanges(
-    event: PostgresChangeEvent.all,
-    schema: 'public',
-    table: 'teams',
-    callback: (payload) {
-      final record = payload.newRecord.isNotEmpty ? payload.newRecord : payload.oldRecord;
-      if (record.isNotEmpty && record['id'] == userTeam.id && record['status'] != null) {
-        controller.add(record['status'] as String);
-      }
-    },
-  ).subscribe();
+  channel
+      .onPostgresChanges(
+        event: PostgresChangeEvent.all,
+        schema: 'public',
+        table: 'teams',
+        callback: (payload) {
+          final record = payload.newRecord.isNotEmpty
+              ? payload.newRecord
+              : payload.oldRecord;
+          if (record.isNotEmpty &&
+              record['id'] == userTeam.id &&
+              record['status'] != null) {
+            controller.add(record['status'] as String);
+          }
+        },
+      )
+      .subscribe();
 
   ref.onDispose(() async {
     await client.removeChannel(channel);

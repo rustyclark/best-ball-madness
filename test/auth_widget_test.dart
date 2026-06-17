@@ -170,54 +170,55 @@ void main() {
     expect(fakeSupabaseClient.fakeAuth.lastPassword, 'newpass123');
   });
 
-  testWidgets('AuthScreen shows email confirmation screen when signup session is null', (
-    WidgetTester tester,
-  ) async {
-    // Configure fake auth to return null session (simulating email verification requirement)
-    fakeSupabaseClient.fakeAuth.signUpReturnsNullSession = true;
+  testWidgets(
+    'AuthScreen shows email confirmation screen when signup session is null',
+    (WidgetTester tester) async {
+      // Configure fake auth to return null session (simulating email verification requirement)
+      fakeSupabaseClient.fakeAuth.signUpReturnsNullSession = true;
 
-    await tester.pumpWidget(buildTestWidget());
+      await tester.pumpWidget(buildTestWidget());
 
-    // Toggle to Sign Up mode
-    await tester.tap(find.widgetWithText(TextButton, 'Sign Up'));
-    await tester.pumpAndSettle();
+      // Toggle to Sign Up mode
+      await tester.tap(find.widgetWithText(TextButton, 'Sign Up'));
+      await tester.pumpAndSettle();
 
-    final emailField = find.widgetWithText(TextFormField, 'Email Address');
-    final passwordField = find.widgetWithText(TextFormField, 'Password');
-    final signUpBtn = find.widgetWithText(ElevatedButton, 'Sign Up');
+      final emailField = find.widgetWithText(TextFormField, 'Email Address');
+      final passwordField = find.widgetWithText(TextFormField, 'Password');
+      final signUpBtn = find.widgetWithText(ElevatedButton, 'Sign Up');
 
-    // Enter valid credentials
-    await tester.enterText(emailField, 'verify@domain.com');
-    await tester.enterText(passwordField, 'verifyPass123');
-    await tester.tap(signUpBtn);
-    await tester.pump(); // Start request
+      // Enter valid credentials
+      await tester.enterText(emailField, 'verify@domain.com');
+      await tester.enterText(passwordField, 'verifyPass123');
+      await tester.tap(signUpBtn);
+      await tester.pump(); // Start request
 
-    // Verify loading
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      // Verify loading
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
-    await tester.pumpAndSettle(); // Resolve request
+      await tester.pumpAndSettle(); // Resolve request
 
-    // Verify confirmation screen is shown
-    expect(find.text('VERIFICATION SENT'), findsOneWidget);
-    expect(find.text('verify@domain.com'), findsOneWidget);
-    expect(
-      find.text(
-        "Please check your inbox (and spam folder) and click the link to confirm your email and complete your registration.",
-      ),
-      findsOneWidget,
-    );
+      // Verify confirmation screen is shown
+      expect(find.text('VERIFICATION SENT'), findsOneWidget);
+      expect(find.text('verify@domain.com'), findsOneWidget);
+      expect(
+        find.text(
+          "Please check your inbox (and spam folder) and click the link to confirm your email and complete your registration.",
+        ),
+        findsOneWidget,
+      );
 
-    // Switcher/Wrap at the bottom should be hidden
-    expect(find.text("Already have an account? "), findsNothing);
+      // Switcher/Wrap at the bottom should be hidden
+      expect(find.text("Already have an account? "), findsNothing);
 
-    // Verify "Back to Log In" button works
-    final backBtn = find.widgetWithText(ElevatedButton, 'Back to Log In');
-    expect(backBtn, findsOneWidget);
-    await tester.tap(backBtn);
-    await tester.pumpAndSettle();
+      // Verify "Back to Log In" button works
+      final backBtn = find.widgetWithText(ElevatedButton, 'Back to Log In');
+      expect(backBtn, findsOneWidget);
+      await tester.tap(backBtn);
+      await tester.pumpAndSettle();
 
-    // Verify back to Log In form mode
-    expect(find.text('LOGIN'), findsOneWidget);
-    expect(find.widgetWithText(ElevatedButton, 'Log In'), findsOneWidget);
-  });
+      // Verify back to Log In form mode
+      expect(find.text('LOGIN'), findsOneWidget);
+      expect(find.widgetWithText(ElevatedButton, 'Log In'), findsOneWidget);
+    },
+  );
 }

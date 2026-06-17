@@ -5,7 +5,9 @@ import '../models/draft_models.dart';
 export '../models/draft_models.dart';
 
 /// Fetches the active tournament (not COMPLETED).
-final activeTournamentProvider = FutureProvider.autoDispose<Tournament?>((ref) async {
+final activeTournamentProvider = FutureProvider.autoDispose<Tournament?>((
+  ref,
+) async {
   final client = ref.watch(supabaseClientProvider);
   final response = await client
       .from('tournaments')
@@ -22,17 +24,21 @@ final activeTournamentProvider = FutureProvider.autoDispose<Tournament?>((ref) a
 
   // Set up realtime channel subscription to listen for updates to this active tournament
   final channel = client.channel('active-tournament-${tournament.id}');
-  channel.onPostgresChanges(
-    event: PostgresChangeEvent.all,
-    schema: 'public',
-    table: 'tournaments',
-    callback: (payload) {
-      final record = payload.newRecord.isNotEmpty ? payload.newRecord : payload.oldRecord;
-      if (record.isNotEmpty && record['id'] == tournament.id) {
-        ref.invalidateSelf();
-      }
-    },
-  ).subscribe();
+  channel
+      .onPostgresChanges(
+        event: PostgresChangeEvent.all,
+        schema: 'public',
+        table: 'tournaments',
+        callback: (payload) {
+          final record = payload.newRecord.isNotEmpty
+              ? payload.newRecord
+              : payload.oldRecord;
+          if (record.isNotEmpty && record['id'] == tournament.id) {
+            ref.invalidateSelf();
+          }
+        },
+      )
+      .subscribe();
 
   ref.onDispose(() async {
     await client.removeChannel(channel);
@@ -42,7 +48,9 @@ final activeTournamentProvider = FutureProvider.autoDispose<Tournament?>((ref) a
 });
 
 /// Fetches the golfer list for the active tournament.
-final golferListProvider = FutureProvider.autoDispose<List<TournamentGolfer>>((ref) async {
+final golferListProvider = FutureProvider.autoDispose<List<TournamentGolfer>>((
+  ref,
+) async {
   final client = ref.watch(supabaseClientProvider);
   final activeTournamentAsync = ref.watch(activeTournamentProvider);
   final activeTournament = activeTournamentAsync.value;

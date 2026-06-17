@@ -141,10 +141,7 @@ class AvailableGolfersScreen extends ConsumerWidget {
               ),
               const SizedBox(height: AppSpacing.lg),
               Expanded(
-                child: GolferTable(
-                  golfers: golfers,
-                  isLocked: isLocked,
-                ),
+                child: GolferTable(golfers: golfers, isLocked: isLocked),
               ),
             ],
           ),

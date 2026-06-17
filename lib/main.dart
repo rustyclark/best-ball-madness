@@ -16,21 +16,18 @@ void main() async {
 
   const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
   const supabaseKey = String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY');
-  
+
   final isConfigured = supabaseUrl.isNotEmpty && supabaseKey.isNotEmpty;
 
   if (isConfigured) {
-    await Supabase.initialize(
-      url: supabaseUrl,
-      publishableKey: supabaseKey,
-    );
+    await Supabase.initialize(url: supabaseUrl, publishableKey: supabaseKey);
   } else {
-    debugPrint('⚠️ WARNING: Supabase is not configured. SUPABASE_URL or SUPABASE_PUBLISHABLE_KEY environment variables are missing.');
+    debugPrint(
+      '⚠️ WARNING: Supabase is not configured. SUPABASE_URL or SUPABASE_PUBLISHABLE_KEY environment variables are missing.',
+    );
   }
 
-  runApp(ProviderScope(
-    child: MyApp(isConfigured: isConfigured),
-  ));
+  runApp(ProviderScope(child: MyApp(isConfigured: isConfigured)));
 }
 
 class AppScrollBehavior extends MaterialScrollBehavior {
@@ -38,10 +35,10 @@ class AppScrollBehavior extends MaterialScrollBehavior {
 
   @override
   Set<PointerDeviceKind> get dragDevices => {
-        PointerDeviceKind.touch,
-        PointerDeviceKind.mouse,
-        PointerDeviceKind.trackpad,
-      };
+    PointerDeviceKind.touch,
+    PointerDeviceKind.mouse,
+    PointerDeviceKind.trackpad,
+  };
 }
 
 class MyApp extends ConsumerWidget {
@@ -58,7 +55,9 @@ class MyApp extends ConsumerWidget {
       themeMode: ThemeMode.light,
       debugShowCheckedModeBanner: false,
       scrollBehavior: const AppScrollBehavior(),
-      home: isConfigured ? const NavigationSwitcher() : const MissingEnvScreen(),
+      home: isConfigured
+          ? const NavigationSwitcher()
+          : const MissingEnvScreen(),
     );
   }
 }
@@ -116,4 +115,3 @@ class NavigationSwitcher extends ConsumerWidget {
     );
   }
 }
-
