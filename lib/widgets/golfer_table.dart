@@ -72,8 +72,14 @@ class _GolferTableState extends ConsumerState<GolferTable> {
           cmp = rA.compareTo(rB);
           break;
         case GolferSortColumn.average:
-          final avA = (a.profile.scoringAvg != null && a.profile.scoringAvg! > 0) ? a.profile.scoringAvg! : 999.0;
-          final avB = (b.profile.scoringAvg != null && b.profile.scoringAvg! > 0) ? b.profile.scoringAvg! : 999.0;
+          final avA =
+              (a.profile.scoringAvg != null && a.profile.scoringAvg! > 0)
+              ? a.profile.scoringAvg!
+              : 999.0;
+          final avB =
+              (b.profile.scoringAvg != null && b.profile.scoringAvg! > 0)
+              ? b.profile.scoringAvg!
+              : 999.0;
           cmp = avA.compareTo(avB);
           break;
       }
@@ -471,11 +477,7 @@ class _GolferTableState extends ConsumerState<GolferTable> {
                   ),
                   const SizedBox(width: AppSpacing.md),
                   // Vertical divider
-                  Container(
-                    height: 80,
-                    width: 1,
-                    color: AppColors.border,
-                  ),
+                  Container(height: 80, width: 1, color: AppColors.border),
                   const SizedBox(width: AppSpacing.md),
                   // Prior Season Column
                   Expanded(
@@ -496,7 +498,9 @@ class _GolferTableState extends ConsumerState<GolferTable> {
                           'Avg Score',
                           (golfer.profile.priorScoringAvg != null &&
                                   golfer.profile.priorScoringAvg! > 0)
-                              ? golfer.profile.priorScoringAvg!.toStringAsFixed(1)
+                              ? golfer.profile.priorScoringAvg!.toStringAsFixed(
+                                  1,
+                                )
                               : '-',
                         ),
                         const SizedBox(height: 4),
@@ -537,10 +541,7 @@ class _GolferTableState extends ConsumerState<GolferTable> {
       children: [
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 10,
-            color: AppColors.textSecondary,
-          ),
+          style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
         ),
         Text(
           value,
