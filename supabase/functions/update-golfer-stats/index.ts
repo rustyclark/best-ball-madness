@@ -52,6 +52,79 @@ serve(async (req) => {
       }
     }
 
+    const fetchStats = async (espnId: string, year: number) => {
+      try {
+        const logUrl = `https://sports.core.api.espn.com/v2/sports/golf/athletes/${espnId}/statisticslog?lang=en&region=us`;
+        const logRes = await fetch(logUrl);
+        let matchingEntries = [];
+        if (logRes.ok) {
+          const logData = await logRes.json();
+          const entries = logData.entries || [];
+          matchingEntries = entries.filter((entry: any) => {
+            const ref = entry.season?.$ref || '';
+            return ref.includes(`/seasons/${year}`);
+          });
+        }
+
+        let bestStats: Record<string, number> | null = null;
+        let maxEvents = -1;
+
+        for (const entry of matchingEntries) {
+          if (entry.statistics && entry.statistics.length > 0) {
+            const statsUrl = entry.statistics[0].statistics?.$ref?.replace('http://', 'https://');
+            if (statsUrl) {
+              try {
+                const statsRes = await fetch(statsUrl);
+                if (statsRes.ok) {
+                  const statsData = await statsRes.json();
+                  const flatStats: Record<string, number> = {};
+                  const categories = statsData.splits?.categories ?? statsData.categories ?? [];
+                  for (const cat of categories) {
+                    const stats = cat.stats ?? cat.statistics ?? [];
+                    for (const stat of stats) {
+                      if (stat.name && typeof stat.value === 'number') {
+                        flatStats[stat.name] = stat.value;
+                      }
+                    }
+                  }
+                  const eventsPlayed = flatStats['tournamentsPlayed'] || 0;
+                  if (eventsPlayed > maxEvents) {
+                    maxEvents = eventsPlayed;
+                    bestStats = flatStats;
+                  }
+                }
+              } catch {
+                // Ignore and try next
+              }
+            }
+          }
+        }
+
+        if (bestStats) {
+          return bestStats;
+        }
+
+        const fallbackUrl = `https://sports.core.api.espn.com/v2/sports/golf/leagues/pga/seasons/${year}/types/2/athletes/${espnId}/statistics`;
+        const statsRes = await fetch(fallbackUrl);
+        if (!statsRes.ok) return null;
+        const statsData = await statsRes.json();
+        
+        const flatStats: Record<string, number> = {};
+        const categories = statsData.splits?.categories ?? statsData.categories ?? [];
+        for (const cat of categories) {
+          const stats = cat.stats ?? cat.statistics ?? [];
+          for (const stat of stats) {
+            if (stat.name && typeof stat.value === 'number') {
+              flatStats[stat.name] = stat.value;
+            }
+          }
+        }
+        return flatStats;
+      } catch {
+        return null;
+      }
+    };
+
     let updatedCount = 0;
     const batchSize = 15;
     for (let i = 0; i < golfers.length; i += batchSize) {
@@ -62,27 +135,14 @@ serve(async (req) => {
 
         // Fetch current-season statistics
         try {
-          const statsRes = await fetch(`https://sports.core.api.espn.com/v2/sports/golf/leagues/pga/seasons/${currentYear}/types/2/athletes/${espnId}/statistics`);
-          if (!statsRes.ok) {
+          const flatStats = await fetchStats(espnId, currentYear);
+          if (!flatStats) {
             // If no current season statistics, just update world rank
             await supabaseClient
               .from('golfer_profiles')
               .update({ world_rank: worldRank })
               .eq('id', golfer.id);
             return;
-          }
-          
-          const statsData = await statsRes.json();
-          
-          const flatStats: Record<string, number> = {};
-          const categories = statsData.splits?.categories ?? statsData.categories ?? [];
-          for (const cat of categories) {
-            const stats = cat.stats ?? cat.statistics ?? [];
-            for (const stat of stats) {
-              if (stat.name && typeof stat.value === 'number') {
-                flatStats[stat.name] = stat.value;
-              }
-            }
           }
 
           const cleanScoringAvg = (flatStats['scoringAverage'] && flatStats['scoringAverage'] > 0) ? flatStats['scoringAverage'] : null;
