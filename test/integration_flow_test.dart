@@ -11,6 +11,7 @@ import 'package:best_ball_madness/screens/auth/setup_team_screen.dart';
 import 'package:best_ball_madness/screens/dashboard/dashboard_screen.dart';
 import 'package:best_ball_madness/widgets/button.dart';
 import 'package:best_ball_madness/widgets/draft_panel.dart';
+import 'package:best_ball_madness/widgets/golfer_table.dart';
 import 'helpers/fake_supabase.dart';
 
 void main() {
@@ -203,13 +204,19 @@ void main() {
       expect(find.text('Empty Slot'), findsNWidgets(4));
 
       // Select golfers in GolferTable
-      // We will tap 'ADD' for Scottie Scheffler, Rory McIlroy, Jon Rahm, and Cameron Young
-      final addButtons = find.widgetWithText(ElevatedButton, 'ADD');
+      // We will tap the add button for Scottie Scheffler, Rory McIlroy, Jon Rahm, and Cameron Young
+      final addButtons = find.descendant(
+        of: find.byType(GolferTable),
+        matching: find.byIcon(Icons.add_circle_outline),
+      );
       expect(addButtons, findsNWidgets(4)); // all 4 are available
 
       // Tap add for all 4 golfers
       for (int i = 0; i < 4; i++) {
-        final firstAddBtn = find.widgetWithText(ElevatedButton, 'ADD').first;
+        final firstAddBtn = find.descendant(
+          of: find.byType(GolferTable),
+          matching: find.byIcon(Icons.add_circle_outline),
+        ).first;
         await tester.ensureVisible(firstAddBtn);
         await tester.pumpAndSettle();
         await tester.tap(firstAddBtn);
@@ -300,9 +307,14 @@ void main() {
       expect(find.text('ROSTER LOCKED'), findsOneWidget);
       expect(find.widgetWithText(BbmButton, 'Save Team'), findsNothing);
 
-      // Verify that GolferTable has no "ADD" or "REMOVE" buttons
-      expect(find.widgetWithText(ElevatedButton, 'ADD'), findsNothing);
-      expect(find.widgetWithText(ElevatedButton, 'REMOVE'), findsNothing);
+      // Verify that GolferTable has no active add buttons
+      expect(
+        find.descendant(
+          of: find.byType(GolferTable),
+          matching: find.byIcon(Icons.add_circle_outline),
+        ),
+        findsNothing,
+      );
     });
   });
 }

@@ -2,7 +2,7 @@
 INSERT INTO public.tournaments (id, espn_event_id, golfapi_course_id, name, course, location, par, yards, start_date, end_date, status, current_round, lock_time_utc)
 VALUES (
     'b1111111-1111-1111-1111-111111111111', 
-    '401812000', 
+    '401811952', 
     'shinnecock_hills_01', 
     'U.S. Open', 
     'Shinnecock Hills Golf Club', 

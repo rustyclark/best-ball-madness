@@ -12,6 +12,7 @@ import '../../widgets/responsive_layout.dart';
 import '../../widgets/tournament_header.dart';
 import '../scorecard/scorecard_screen.dart';
 import '../leaderboard/leaderboard_screen.dart';
+import 'available_golfers_screen.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -284,9 +285,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ),
                 const SizedBox(height: AppSpacing.md),
 
-                // Golfer Table
+                // Golfer Table Preview
                 Text(
-                  'AVAILABLE GOLFERS',
+                  'AVAILABLE GOLFERS PREVIEW',
                   style: theme.textTheme.labelLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: AppColors.primary,
@@ -295,8 +296,48 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 golferListAsync.when(
-                  data: (list) =>
-                      GolferTable(golfers: list, isLocked: isLocked),
+                  data: (list) => Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      GolferTable(
+                        golfers: list,
+                        isLocked: isLocked,
+                        limit: 5,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => AvailableGolfersScreen(
+                                golfers: list,
+                                isLocked: isLocked,
+                              ),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            vertical: AppSpacing.md,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: AppSpacing.borderRadiusLg,
+                          ),
+                        ),
+                        child: const Text(
+                          'SEE ALL AVAILABLE GOLFERS',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                            letterSpacing: 1.0,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                   loading: () => const Center(
                     child: Padding(
                       padding: EdgeInsets.all(AppSpacing.xl),

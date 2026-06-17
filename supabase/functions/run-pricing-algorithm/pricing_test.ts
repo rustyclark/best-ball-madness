@@ -20,7 +20,7 @@ Deno.test("computeGolferPrice - zero data golfer", () => {
 
   const result = computeGolferPrice(golfer, 68, 74);
   assertEquals(result.isZeroData, true);
-  assertEquals(result.price, 20.00);
+  assertEquals(result.price, 12.00);
 });
 
 Deno.test("computeGolferPrice - premium golfer", () => {
@@ -42,9 +42,9 @@ Deno.test("computeGolferPrice - premium golfer", () => {
 
   const result = computeGolferPrice(golfer, 68.2, 74.0);
   assertEquals(result.isZeroData, false);
-  // High rank, low scoring average, many wins -> should have premium price near $31
-  assertEquals(result.price > 28, true);
-  assertEquals(result.price <= 31.0, true);
+  // High rank, low scoring average, many wins -> should have premium price near $38
+  assertEquals(result.price > 35, true);
+  assertEquals(result.price <= 38.0, true);
 });
 
 Deno.test("computeGolferPrice - low rank golfer", () => {
@@ -66,7 +66,7 @@ Deno.test("computeGolferPrice - low rank golfer", () => {
 
   const result = computeGolferPrice(golfer, 68.2, 74.0);
   assertEquals(result.isZeroData, false);
-  // Low rank, high scoring average, no wins -> price should be near bottom $19
-  assertEquals(result.price < 21.0, true);
-  assertEquals(result.price >= 19.0, true);
+  // Low rank, high scoring average, no wins -> price should be near bottom $12
+  assertEquals(result.price < 15.0, true);
+  assertEquals(result.price >= 12.0, true);
 });

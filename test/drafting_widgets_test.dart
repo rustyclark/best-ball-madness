@@ -339,7 +339,10 @@ void main() {
         ],
         child: MaterialApp(
           home: Scaffold(
-            body: GolferTable(golfers: mockGolfers, isLocked: false),
+            body: SizedBox(
+              height: 600,
+              child: GolferTable(golfers: mockGolfers, isLocked: false),
+            ),
           ),
         ),
       ),
@@ -347,20 +350,20 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    // Verify Scottie is present and has REMOVE button (since selected)
+    // Verify Scottie is present and has check circle icon (since selected)
     expect(find.text('Scottie Scheffler'), findsOneWidget);
-    expect(find.text('REMOVE'), findsOneWidget);
+    expect(find.byIcon(Icons.check_circle), findsOneWidget);
 
-    // Verify Rory is present and has ADD button
+    // Verify Rory is present and has add circle outline icon
     expect(find.text('Rory McIlroy'), findsOneWidget);
-    expect(find.text('ADD'), findsAtLeast(1));
+    expect(find.byIcon(Icons.add_circle_outline), findsAtLeast(1));
 
     // Verify Tiger Woods is marked WD
     expect(find.text('Tiger Woods'), findsOneWidget);
     expect(find.text('WD'), findsOneWidget);
   });
 
-  testWidgets('GolferTable limits display to 50 golfers and renders pagination controls', (
+  testWidgets('GolferTable displays all golfers without pagination and filters by search query', (
     WidgetTester tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(800, 5000));
@@ -376,7 +379,7 @@ void main() {
         profile: GolferProfile(
           id: 'gp-$index',
           espnId: '$index',
-          name: 'Golfer Name $index',
+          name: index == 10 ? 'Rory Test' : 'Golfer Name $index',
         ),
       );
     });
@@ -385,7 +388,10 @@ void main() {
       ProviderScope(
         child: MaterialApp(
           home: Scaffold(
-            body: GolferTable(golfers: manyGolfers, isLocked: false),
+            body: SizedBox(
+              height: 5000,
+              child: GolferTable(golfers: manyGolfers, isLocked: false),
+            ),
           ),
         ),
       ),
@@ -393,31 +399,26 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    // Verify page text is shown
-    expect(find.text('PAGE 1 OF 2'), findsOneWidget);
+    // Verify page text (pagination) is NOT present
+    expect(find.textContaining('PAGE 1'), findsNothing);
 
     // Verify first golfer is shown
     expect(find.text('Golfer Name 0'), findsOneWidget);
 
-    // Verify 50th golfer (index 49) is shown
-    expect(find.text('Golfer Name 49'), findsOneWidget);
+    // Verify 55th golfer (index 54) is shown since pagination is removed
+    expect(find.text('Golfer Name 54'), findsOneWidget);
 
-    // Verify 51st golfer (index 50) is NOT shown (since it's on page 2)
-    expect(find.text('Golfer Name 50'), findsNothing);
+    // Test Search Filter: Search for 'Rory'
+    final searchField = find.byType(TextField);
+    expect(searchField, findsOneWidget);
 
-    // Tap Next Page button
-    final nextBtn = find.byTooltip('Next Page');
-    expect(nextBtn, findsOneWidget);
-    await tester.tap(nextBtn);
+    await tester.enterText(searchField, 'Rory');
     await tester.pumpAndSettle();
 
-    // Verify page text updated
-    expect(find.text('PAGE 2 OF 2'), findsOneWidget);
+    // 'Rory Test' should still be visible
+    expect(find.text('Rory Test'), findsOneWidget);
 
-    // Verify 51st golfer (index 50) is now shown
-    expect(find.text('Golfer Name 50'), findsOneWidget);
-
-    // Verify first golfer (index 0) is now gone
+    // 'Golfer Name 0' should now be hidden
     expect(find.text('Golfer Name 0'), findsNothing);
   });
 }

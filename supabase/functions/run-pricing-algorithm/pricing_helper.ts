@@ -24,7 +24,7 @@ export function computeGolferPrice(
 
   // Zero-data flat-fee check
   if (currentEvents === 0 && !hasPriorData) {
-    return { isZeroData: true, price: 20.00 };
+    return { isZeroData: true, price: 12.00 };
   }
 
   const priorWeight = Math.max(0, 1 - currentEvents / N);
@@ -38,12 +38,15 @@ export function computeGolferPrice(
   const priorRounds = golfer.prior_rounds_played ?? 0;
   const blendedRounds = currentRounds + priorWeight * priorRounds;
 
+  const rawScoringAvg = golfer.scoring_avg && golfer.scoring_avg > 0 ? golfer.scoring_avg : 72.0;
+  const rawPriorScoringAvg = golfer.prior_scoring_avg && golfer.prior_scoring_avg > 0 ? golfer.prior_scoring_avg : 72.0;
+
   let scoringAvg = 72.0; // baseline fallback
   if (blendedRounds > 0) {
-    scoringAvg = ((currentRounds * (golfer.scoring_avg ?? 72.0)) + 
-                  (priorWeight * priorRounds * (golfer.prior_scoring_avg ?? 72.0))) / blendedRounds;
+    scoringAvg = ((currentRounds * rawScoringAvg) + 
+                  (priorWeight * priorRounds * rawPriorScoringAvg)) / blendedRounds;
   } else {
-    scoringAvg = golfer.scoring_avg ?? golfer.prior_scoring_avg ?? 72.0;
+    scoringAvg = rawScoringAvg;
   }
 
   const clamp = (val: number, min: number, max: number) => Math.max(min, Math.min(max, val));
@@ -61,8 +64,9 @@ export function computeGolferPrice(
                    0.15 * top10_score + 
                    0.15 * cuts_score;
 
-  const rating = 50 + (combined * 50);
-  let price = 19.00 + ((rating - 50.0) * 0.24);
+  const minPrice = 12.00;
+  const maxPrice = 38.00;
+  let price = minPrice + Math.pow(combined, 1.5) * (maxPrice - minPrice);
   price = Math.round(price * 100) / 100; // round to 2 decimal places
 
   return { isZeroData: false, price };

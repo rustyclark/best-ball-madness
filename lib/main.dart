@@ -1,9 +1,11 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'providers/auth_providers.dart';
 import 'screens/auth/auth_screen.dart';
+import 'screens/auth/missing_env_screen.dart';
 import 'screens/auth/setup_team_screen.dart';
 import 'screens/dashboard/dashboard_screen.dart';
 import 'theme/colors.dart';
@@ -12,16 +14,40 @@ import 'theme/theme.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Supabase.initialize(
-    url: const String.fromEnvironment('SUPABASE_URL'),
-    publishableKey: const String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY'),
-  );
+  const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
+  const supabaseKey = String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY');
+  
+  final isConfigured = supabaseUrl.isNotEmpty && supabaseKey.isNotEmpty;
 
-  runApp(const ProviderScope(child: MyApp()));
+  if (isConfigured) {
+    await Supabase.initialize(
+      url: supabaseUrl,
+      publishableKey: supabaseKey,
+    );
+  } else {
+    debugPrint('⚠️ WARNING: Supabase is not configured. SUPABASE_URL or SUPABASE_PUBLISHABLE_KEY environment variables are missing.');
+  }
+
+  runApp(ProviderScope(
+    child: MyApp(isConfigured: isConfigured),
+  ));
+}
+
+class AppScrollBehavior extends MaterialScrollBehavior {
+  const AppScrollBehavior();
+
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+        PointerDeviceKind.touch,
+        PointerDeviceKind.mouse,
+        PointerDeviceKind.trackpad,
+      };
 }
 
 class MyApp extends ConsumerWidget {
-  const MyApp({super.key});
+  final bool isConfigured;
+
+  const MyApp({super.key, this.isConfigured = true});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -31,7 +57,8 @@ class MyApp extends ConsumerWidget {
       darkTheme: AppTheme.lightTheme,
       themeMode: ThemeMode.light,
       debugShowCheckedModeBanner: false,
-      home: const NavigationSwitcher(),
+      scrollBehavior: const AppScrollBehavior(),
+      home: isConfigured ? const NavigationSwitcher() : const MissingEnvScreen(),
     );
   }
 }

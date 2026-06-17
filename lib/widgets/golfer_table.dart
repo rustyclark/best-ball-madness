@@ -3,28 +3,58 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/draft_providers.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
-import 'badge.dart';
-import 'table.dart';
 
 enum GolferSortColumn { name, price, rank, average }
 
 class GolferTable extends ConsumerStatefulWidget {
   final List<TournamentGolfer> golfers;
   final bool isLocked;
+  final int? limit;
 
-  const GolferTable({super.key, required this.golfers, required this.isLocked});
+  const GolferTable({
+    super.key,
+    required this.golfers,
+    required this.isLocked,
+    this.limit,
+  });
 
   @override
   ConsumerState<GolferTable> createState() => _GolferTableState();
 }
 
 class _GolferTableState extends ConsumerState<GolferTable> {
+  final TextEditingController _searchController = TextEditingController();
   GolferSortColumn _sortBy = GolferSortColumn.price;
   bool _ascending = false; // default price desc
-  int _currentPage = 0;
+  String _searchQuery = '';
+  final Set<String> _expandedGolferIds = {};
 
-  List<TournamentGolfer> _getSortedGolfers() {
-    final list = List<TournamentGolfer>.from(widget.golfers);
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<TournamentGolfer> _getSortedAndFilteredGolfers() {
+    List<TournamentGolfer> list = List<TournamentGolfer>.from(widget.golfers);
+
+    // Apply Search Filter (only if not in preview/limit mode)
+    if (widget.limit == null && _searchQuery.isNotEmpty) {
+      final query = _searchQuery.toLowerCase();
+      list = list.where((g) => g.profile.name.toLowerCase().contains(query)).toList();
+    }
+
+    // Apply Sorting
     list.sort((a, b) {
       int cmp = 0;
       switch (_sortBy) {
@@ -47,6 +77,12 @@ class _GolferTableState extends ConsumerState<GolferTable> {
       }
       return _ascending ? cmp : -cmp;
     });
+
+    // Apply Limit (preview mode)
+    if (widget.limit != null && list.length > widget.limit!) {
+      list = list.sublist(0, widget.limit!);
+    }
+
     return list;
   }
 
@@ -62,54 +98,279 @@ class _GolferTableState extends ConsumerState<GolferTable> {
     return '$day $hour:$minute $period';
   }
 
-  Widget _buildSortableHeader(
-    String label,
-    GolferSortColumn column,
-    ThemeData theme,
-  ) {
-    final isSorted = _sortBy == column;
-    return InkWell(
-      onTap: () {
-        setState(() {
-          _currentPage = 0;
-          if (_sortBy == column) {
-            _ascending = !_ascending;
-          } else {
-            _sortBy = column;
-            _ascending = column != GolferSortColumn.price;
-          }
-        });
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: column == GolferSortColumn.name
-              ? MainAxisAlignment.start
-              : MainAxisAlignment.end,
-          children: [
-            Flexible(
-              child: Text(
-                label,
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: isSorted ? AppColors.primary : AppColors.textSecondary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 11,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            if (isSorted) ...[
-              const SizedBox(width: 2),
-              Icon(
-                _ascending ? Icons.arrow_upward : Icons.arrow_downward,
-                size: 11,
-                color: AppColors.primary,
-              ),
-            ],
-          ],
+  Widget _buildSearchBar(ThemeData theme) {
+    return TextField(
+      controller: _searchController,
+      decoration: InputDecoration(
+        hintText: 'Search golfers by name...',
+        hintStyle: const TextStyle(color: AppColors.textMuted),
+        prefixIcon: const Icon(Icons.search, color: AppColors.primary),
+        suffixIcon: _searchQuery.isNotEmpty
+            ? IconButton(
+                icon: const Icon(Icons.clear, color: AppColors.textSecondary),
+                onPressed: () {
+                  _searchController.clear();
+                },
+              )
+            : null,
+        filled: true,
+        fillColor: AppColors.alternateRow,
+        contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: AppSpacing.md),
+        border: OutlineInputBorder(
+          borderRadius: AppSpacing.borderRadiusLg,
+          borderSide: const BorderSide(color: AppColors.border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: AppSpacing.borderRadiusLg,
+          borderSide: const BorderSide(color: AppColors.border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: AppSpacing.borderRadiusLg,
+          borderSide: const BorderSide(color: AppColors.primary),
         ),
       ),
+      style: const TextStyle(color: AppColors.textPrimary),
+    );
+  }
+
+  Widget _buildSortChips(ThemeData theme) {
+    final List<Map<String, dynamic>> sortOptions = [
+      {'label': 'Price', 'value': GolferSortColumn.price},
+      {'label': 'World Rank', 'value': GolferSortColumn.rank},
+      {'label': 'Name', 'value': GolferSortColumn.name},
+      {'label': 'Avg Score', 'value': GolferSortColumn.average},
+    ];
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: sortOptions.map((opt) {
+          final col = opt['value'] as GolferSortColumn;
+          final isSelected = _sortBy == col;
+          final label = opt['label'] as String;
+
+          return Padding(
+            padding: const EdgeInsets.only(right: AppSpacing.xs),
+            child: ChoiceChip(
+              label: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      color: isSelected ? Colors.white : AppColors.textSecondary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                  if (isSelected) ...[
+                    const SizedBox(width: 4),
+                    Icon(
+                      _ascending ? Icons.arrow_upward : Icons.arrow_downward,
+                      size: 14,
+                      color: Colors.white,
+                    ),
+                  ],
+                ],
+              ),
+              selected: isSelected,
+              onSelected: (selected) {
+                setState(() {
+                  if (_sortBy == col) {
+                    _ascending = !_ascending;
+                  } else {
+                    _sortBy = col;
+                    _ascending = col != GolferSortColumn.price;
+                  }
+                });
+              },
+              selectedColor: AppColors.primary,
+              backgroundColor: AppColors.alternateRow,
+              shape: RoundedRectangleBorder(
+                borderRadius: AppSpacing.borderRadiusMd,
+                side: BorderSide(
+                  color: isSelected ? AppColors.primary : AppColors.border,
+                ),
+              ),
+              showCheckmark: false,
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildGolferRow(
+    TournamentGolfer golfer,
+    bool isSelected,
+    bool isExpanded,
+    ThemeData theme,
+  ) {
+    return Column(
+      children: [
+        InkWell(
+          onTap: () {
+            setState(() {
+              if (isExpanded) {
+                _expandedGolferIds.remove(golfer.id);
+              } else {
+                _expandedGolferIds.add(golfer.id);
+              }
+            });
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+            child: Row(
+              children: [
+                // Selection action button next to name
+                if (widget.isLocked)
+                  Padding(
+                    padding: const EdgeInsets.only(right: AppSpacing.sm),
+                    child: isSelected
+                        ? const Icon(Icons.check_circle, color: AppColors.primary, size: 24)
+                        : const Icon(Icons.lock_outline, color: AppColors.textMuted, size: 20),
+                  )
+                else
+                  Padding(
+                    padding: const EdgeInsets.only(right: AppSpacing.sm),
+                    child: GestureDetector(
+                      onTap: () {
+                        if (isSelected) {
+                          ref.read(draftStateNotifierProvider.notifier).removeGolfer(golfer);
+                        } else {
+                          final success = ref.read(draftStateNotifierProvider.notifier).addGolfer(golfer);
+                          if (!success) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Roster is already full! Remove a golfer first.'),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          }
+                        }
+                      },
+                      child: isSelected
+                          ? const Icon(Icons.check_circle, color: AppColors.accent, size: 26)
+                          : const Icon(Icons.add_circle_outline, color: AppColors.primary, size: 26),
+                    ),
+                  ),
+                // Golfer details
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        golfer.profile.name,
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      if (golfer.status == 'WD' || golfer.status == 'MC')
+                        Text(
+                          golfer.status,
+                          style: const TextStyle(
+                            color: AppColors.scoreBogeyBg,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        )
+                      else if (golfer.teeTime != null)
+                        Text(
+                          _formatTeeTime(golfer.teeTime!),
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 11,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                // Price & World Rank
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      '\$${golfer.price.toStringAsFixed(2)}',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      golfer.profile.worldRank != null ? 'WR ${golfer.profile.worldRank}' : 'WR -',
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                Icon(
+                  isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                  color: AppColors.textMuted,
+                  size: 20,
+                ),
+              ],
+            ),
+          ),
+        ),
+        AnimatedCrossFade(
+          firstChild: const SizedBox.shrink(),
+          secondChild: Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.sm, left: 34, right: 8), // indent under name
+            child: Container(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: AppColors.alternateRow,
+                borderRadius: AppSpacing.borderRadiusMd,
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'SCORING AVERAGE',
+                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        golfer.profile.scoringAvg != null ? golfer.profile.scoringAvg!.toStringAsFixed(1) : '-',
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                      ),
+                    ],
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      const Text(
+                        'STATS (W / T10 / CUTS)',
+                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${golfer.profile.wins ?? 0}W / ${golfer.profile.top10s ?? 0}T10 / ${golfer.profile.cutsMade ?? 0}C',
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          crossFadeState: isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+          duration: const Duration(milliseconds: 150),
+        ),
+        const Divider(height: 1, color: AppColors.border),
+      ],
     );
   }
 
@@ -117,254 +378,51 @@ class _GolferTableState extends ConsumerState<GolferTable> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final selectedGolfers = ref.watch(draftStateNotifierProvider);
-    final sortedGolfers = _getSortedGolfers();
+    final sortedGolfers = _getSortedAndFilteredGolfers();
 
-    const columnWidths = [2.5, 1.2, 0.8, 1.0, 1.8, 1.5];
-
-    final int itemsPerPage = 50;
-    final int totalItems = sortedGolfers.length;
-    final int totalPages = (totalItems / itemsPerPage).ceil();
-
-    if (_currentPage >= totalPages && totalPages > 0) {
-      _currentPage = totalPages - 1;
+    if (widget.limit != null) {
+      // Preview mode (unconstrained height inside Dashboard's scrollview)
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: sortedGolfers.map((golfer) {
+          final isSelected = selectedGolfers.any((g) => g.id == golfer.id);
+          final isExpanded = _expandedGolferIds.contains(golfer.id);
+          return _buildGolferRow(golfer, isSelected, isExpanded, theme);
+        }).toList(),
+      );
     }
 
-    final int startIndex = _currentPage * itemsPerPage;
-    final int endIndex = (startIndex + itemsPerPage) > totalItems ? totalItems : (startIndex + itemsPerPage);
-
-    final paginatedGolfers = totalItems > 0
-        ? sortedGolfers.sublist(startIndex, endIndex)
-        : <TournamentGolfer>[];
-
-    final tableWidget = BbmTable(
-      minWidth: 600.0,
-      columnWidths: columnWidths,
-      headers: [
-        _buildSortableHeader('Golfer', GolferSortColumn.name, theme),
-        _buildSortableHeader('Price', GolferSortColumn.price, theme),
-        _buildSortableHeader('WR', GolferSortColumn.rank, theme),
-        _buildSortableHeader('Avg', GolferSortColumn.average, theme),
-        Align(
-          alignment: Alignment.centerRight,
-          child: Text(
-            'Stats',
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-        Align(
-          alignment: Alignment.center,
-          child: Text(
-            'Action',
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-      ],
-      rows: paginatedGolfers.map((golfer) {
-        final isSelected = selectedGolfers.any((g) => g.id == golfer.id);
-
-        final String statsText =
-            '${golfer.profile.wins ?? 0}W / ${golfer.profile.top10s ?? 0}T10 / ${golfer.profile.cutsMade ?? 0}C';
-
-        return BbmTableRow(
-          columnWidths: columnWidths,
-          cells: [
-            // Golfer Name & Tee Time/Status
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  golfer.profile.name,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                if (golfer.status == 'WD' || golfer.status == 'MC')
-                  Text(
-                    golfer.status,
-                    style: const TextStyle(
-                      color: AppColors.scoreBogeyBg,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  )
-                else if (golfer.teeTime != null)
-                  Text(
-                    _formatTeeTime(golfer.teeTime!),
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 11,
-                    ),
-                  ),
-              ],
-            ),
-            // Price
-            Align(
-              alignment: Alignment.centerRight,
-              child: Text(
-                '\$${golfer.price.toStringAsFixed(2)}',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ),
-            // WR (World Rank)
-            Align(
-              alignment: Alignment.centerRight,
-              child: Text(
-                golfer.profile.worldRank != null
-                    ? '${golfer.profile.worldRank}'
-                    : '-',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ),
-            // Avg (Scoring Average)
-            Align(
-              alignment: Alignment.centerRight,
-              child: Text(
-                golfer.profile.scoringAvg != null
-                    ? golfer.profile.scoringAvg!.toStringAsFixed(1)
-                    : '-',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ),
-            // Stats
-            Align(
-              alignment: Alignment.centerRight,
-              child: Text(
-                statsText,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: AppColors.textSecondary,
-                  fontSize: 11,
-                ),
-              ),
-            ),
-            // Action Button
-            Center(
-              child: widget.isLocked
-                  ? (isSelected
-                        ? BbmBadge.teamStatus('ACTIVE')
-                        : const SizedBox.shrink())
-                  : (isSelected
-                        ? ElevatedButton(
-                            onPressed: () {
-                              ref
-                                  .read(draftStateNotifierProvider.notifier)
-                                  .removeGolfer(golfer);
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.scoreBogeyBg,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: AppSpacing.sm,
-                                vertical: 4,
-                              ),
-                              minimumSize: const Size(64, 32),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: AppSpacing.borderRadiusSm,
-                              ),
-                            ),
-                            child: const Text(
-                              'REMOVE',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          )
-                        : ElevatedButton(
-                            onPressed: () {
-                              final success = ref
-                                  .read(draftStateNotifierProvider.notifier)
-                                  .addGolfer(golfer);
-                              if (!success) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Roster is already full! Remove a golfer first.',
-                                    ),
-                                    duration: Duration(seconds: 2),
-                                  ),
-                                );
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: AppSpacing.sm,
-                                vertical: 4,
-                              ),
-                              minimumSize: const Size(64, 32),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: AppSpacing.borderRadiusSm,
-                              ),
-                            ),
-                            child: const Text(
-                              'ADD',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          )),
-            ),
-          ],
-        );
-      }).toList(),
-    );
-
-    if (totalPages <= 1) {
-      return tableWidget;
-    }
-
+    // Full screen search/browse mode (constrained height, uses ListView.builder)
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        tableWidget,
+        _buildSearchBar(theme),
         const SizedBox(height: AppSpacing.md),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.chevron_left, color: AppColors.primary),
-              onPressed: _currentPage > 0
-                  ? () => setState(() => _currentPage--)
-                  : null,
-              tooltip: 'Previous Page',
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Text(
-              'PAGE ${_currentPage + 1} OF $totalPages',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: AppColors.textSecondary,
-                letterSpacing: 1.0,
+        _buildSortChips(theme),
+        const SizedBox(height: AppSpacing.md),
+        if (sortedGolfers.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
+            child: Center(
+              child: Text(
+                _searchQuery.isNotEmpty ? 'No golfers match "$_searchQuery"' : 'No golfers available',
+                style: const TextStyle(color: AppColors.textSecondary),
               ),
             ),
-            const SizedBox(width: AppSpacing.md),
-            IconButton(
-              icon: const Icon(Icons.chevron_right, color: AppColors.primary),
-              onPressed: _currentPage < totalPages - 1
-                  ? () => setState(() => _currentPage++)
-                  : null,
-              tooltip: 'Next Page',
+          )
+        else
+          Expanded(
+            child: ListView.builder(
+              itemCount: sortedGolfers.length,
+              itemBuilder: (context, index) {
+                final golfer = sortedGolfers[index];
+                final isSelected = selectedGolfers.any((g) => g.id == golfer.id);
+                final isExpanded = _expandedGolferIds.contains(golfer.id);
+
+                return _buildGolferRow(golfer, isSelected, isExpanded, theme);
+              },
             ),
-          ],
-        ),
+          ),
       ],
     );
   }
