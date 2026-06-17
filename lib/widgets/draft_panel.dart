@@ -1,0 +1,325 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/draft_providers.dart';
+import '../theme/colors.dart';
+import '../theme/spacing.dart';
+import 'badge.dart';
+import 'button.dart';
+import 'card.dart';
+
+class DraftPanel extends ConsumerStatefulWidget {
+  final bool isLocked;
+
+  const DraftPanel({super.key, required this.isLocked});
+
+  @override
+  ConsumerState<DraftPanel> createState() => _DraftPanelState();
+}
+
+class _DraftPanelState extends ConsumerState<DraftPanel> {
+  bool _isSaving = false;
+  String? _saveError;
+
+  Future<void> _handleSave() async {
+    setState(() {
+      _isSaving = true;
+      _saveError = null;
+    });
+
+    try {
+      final selectedGolfers = ref.read(draftStateNotifierProvider);
+      final saveAction = ref.read(saveTeamAction);
+      await saveAction(selectedGolfers);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Roster saved successfully!')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _saveError = e.toString().replaceFirst('Exception: ', '');
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final selectedGolfers = ref.watch(draftStateNotifierProvider);
+
+    final double totalSpend = selectedGolfers.fold<double>(
+      0,
+      (sum, g) => sum + g.price,
+    );
+    final double remainingBudget = 100.0 - totalSpend;
+    final bool isOverBudget = remainingBudget < 0;
+    final bool isRosterComplete = selectedGolfers.length == 4;
+    final bool hasWdGolfer = selectedGolfers.any((g) => g.status == 'WD');
+
+    final bool canSave =
+        isRosterComplete && !isOverBudget && !widget.isLocked && !_isSaving;
+
+    return BbmCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Header
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.xs,
+            children: [
+              Text(
+                'YOUR ROSTER',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
+                  letterSpacing: 1.0,
+                ),
+              ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'REMAINING BUDGET: ',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    '\$${remainingBudget.toStringAsFixed(2)}',
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: isOverBudget
+                          ? AppColors.scoreBogeyBg
+                          : AppColors.primary,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const Divider(color: AppColors.border, height: AppSpacing.md),
+
+          // 4 Roster Slots
+          ...List.generate(4, (index) {
+            if (index < selectedGolfers.length) {
+              final golfer = selectedGolfers[index];
+              return Container(
+                margin: const EdgeInsets.only(bottom: AppSpacing.xs),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: AppSpacing.xs,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: AppSpacing.borderRadiusMd,
+                  border: Border.all(
+                    color: golfer.status == 'WD'
+                        ? AppColors.scoreBogeyBg
+                        : AppColors.border,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                golfer.profile.name,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              if (golfer.status == 'WD') ...[
+                                const SizedBox(width: AppSpacing.xs),
+                                BbmBadge.golferStatus('WD'),
+                              ],
+                            ],
+                          ),
+                          Text(
+                            'Price: \$${golfer.price.toStringAsFixed(2)} | Rank: ${golfer.profile.worldRank ?? "-"}',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (!widget.isLocked)
+                      IconButton(
+                        icon: const Icon(
+                          Icons.remove_circle_outline,
+                          color: AppColors.scoreBogeyBg,
+                          size: 20,
+                        ),
+                        onPressed: () {
+                          ref
+                              .read(draftStateNotifierProvider.notifier)
+                              .removeGolfer(golfer);
+                        },
+                        tooltip: 'Remove',
+                      ),
+                  ],
+                ),
+              );
+            } else {
+              return Container(
+                margin: const EdgeInsets.only(bottom: AppSpacing.xs),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: AppSpacing.md,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.background.withValues(alpha: 0.5),
+                  borderRadius: AppSpacing.borderRadiusMd,
+                  border: Border.all(
+                    color: AppColors.border.withValues(alpha: 0.5),
+                    style: BorderStyle.solid,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.add_circle_outline,
+                      color: AppColors.textSecondary,
+                      size: 20,
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Text(
+                      'Empty Slot',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textSecondary,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+          }),
+
+          const SizedBox(height: AppSpacing.sm),
+
+          // Alerts
+          if (isOverBudget) ...[
+            _buildAlert(
+              theme,
+              'Budget limit of \$100 exceeded! Remove a golfer.',
+              AppColors.scoreBogeyBg,
+              Icons.error_outline,
+            ),
+            const SizedBox(height: AppSpacing.xs),
+          ],
+          if (!isRosterComplete) ...[
+            _buildAlert(
+              theme,
+              'Roster incomplete! Draft exactly 4 golfers.',
+              AppColors.textSecondary,
+              Icons.info_outline,
+            ),
+            const SizedBox(height: AppSpacing.xs),
+          ],
+          if (hasWdGolfer && !widget.isLocked) ...[
+            _buildAlert(
+              theme,
+              'A selected golfer has withdrawn (WD)! Please replace them.',
+              Colors.amber,
+              Icons.warning_amber_rounded,
+            ),
+            const SizedBox(height: AppSpacing.xs),
+          ],
+          if (_saveError != null) ...[
+            _buildAlert(
+              theme,
+              _saveError!,
+              AppColors.scoreBogeyBg,
+              Icons.error,
+            ),
+            const SizedBox(height: AppSpacing.xs),
+          ],
+
+          const SizedBox(height: AppSpacing.sm),
+
+          // Save / Lock Status Button
+          if (widget.isLocked)
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: AppColors.border.withValues(alpha: 0.5),
+                borderRadius: AppSpacing.borderRadiusMd,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.lock_outline,
+                    color: AppColors.textSecondary,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Text(
+                    'ROSTER LOCKED',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            BbmButton(
+              text: 'Save Team',
+              onPressed: canSave ? _handleSave : null,
+              isLoading: _isSaving,
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAlert(
+    ThemeData theme,
+    String message,
+    Color color,
+    IconData icon,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        border: Border.all(color: color, width: 1),
+        borderRadius: AppSpacing.borderRadiusMd,
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 18),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              message,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: color,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

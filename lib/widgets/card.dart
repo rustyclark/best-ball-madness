@@ -27,13 +27,15 @@ class _BbmCardState extends State<BbmCard> {
 
   @override
   Widget build(BuildContext context) {
-    final border = widget.borderSide ?? const BorderSide(color: AppColors.border, width: 1);
-    
+    final border =
+        widget.borderSide ??
+        const BorderSide(color: AppColors.border, width: 1);
+
     Widget cardContent = Container(
       padding: widget.padding,
       decoration: BoxDecoration(
-        color: widget.glassmorphic 
-            ? AppColors.cardBg.withOpacity(0.75) 
+        color: widget.glassmorphic
+            ? AppColors.cardBg.withValues(alpha: 0.75)
             : AppColors.cardBg,
         borderRadius: AppSpacing.borderRadiusLg,
         border: Border.fromBorderSide(
@@ -52,8 +54,8 @@ class _BbmCardState extends State<BbmCard> {
         child: InkWell(
           onTap: widget.onTap,
           borderRadius: AppSpacing.borderRadiusLg,
-          splashColor: AppColors.primary.withOpacity(0.1),
-          highlightColor: AppColors.primary.withOpacity(0.05),
+          splashColor: AppColors.primary.withValues(alpha: 0.1),
+          highlightColor: AppColors.primary.withValues(alpha: 0.05),
           child: AnimatedScale(
             scale: _isHovered ? 1.015 : 1.0,
             duration: const Duration(milliseconds: 150),

@@ -40,10 +40,7 @@ class BbmButton extends StatelessWidget {
   Widget build(BuildContext context) {
     // Enforce 44x44 minimum tap target
     return ConstrainedBox(
-      constraints: const BoxConstraints(
-        minHeight: 44.0,
-        minWidth: 44.0,
-      ),
+      constraints: const BoxConstraints(minHeight: 44.0, minWidth: 44.0),
       child: _buildButton(context),
     );
   }
@@ -69,11 +66,7 @@ class BbmButton extends StatelessWidget {
           const SizedBox(width: AppSpacing.xs),
         ],
         Flexible(
-          child: Text(
-            text,
-            overflow: TextOverflow.ellipsis,
-            maxLines: 1,
-          ),
+          child: Text(text, overflow: TextOverflow.ellipsis, maxLines: 1),
         ),
       ],
     );
@@ -94,7 +87,10 @@ class BbmButton extends StatelessWidget {
           onPressed: isLoading ? null : onPressed,
           style: TextButton.styleFrom(
             foregroundColor: AppColors.accent,
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.sm,
+            ),
             shape: const RoundedRectangleBorder(
               borderRadius: AppSpacing.borderRadiusMd,
             ),

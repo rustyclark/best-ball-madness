@@ -28,10 +28,7 @@ class ResponsiveLayout extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFF0D1117),
-                    Color(0xFF06090D),
-                  ],
+                  colors: [Color(0xFF0D1117), Color(0xFF06090D)],
                 ),
               ),
               child: Center(
@@ -48,7 +45,9 @@ class ResponsiveLayout extends StatelessWidget {
                     ],
                   ),
                   child: Scaffold(
-                    appBar: appBar != null ? _buildPreferredSizeAppBar(appBar!) : null,
+                    appBar: appBar != null
+                        ? _buildPreferredSizeAppBar(appBar!)
+                        : null,
                     backgroundColor: AppColors.background,
                     body: child,
                     bottomNavigationBar: bottomNavigationBar,
@@ -59,7 +58,9 @@ class ResponsiveLayout extends StatelessWidget {
           } else {
             // Standard mobile view
             return Scaffold(
-              appBar: appBar != null ? _buildPreferredSizeAppBar(appBar!) : null,
+              appBar: appBar != null
+                  ? _buildPreferredSizeAppBar(appBar!)
+                  : null,
               backgroundColor: AppColors.background,
               body: child,
               bottomNavigationBar: bottomNavigationBar,

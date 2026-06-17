@@ -50,3 +50,7 @@ app.*.map.json
 .env.development
 .env.production
 
+.vercel
+.env*
+*.log
+/scratch/

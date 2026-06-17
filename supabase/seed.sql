@@ -18,38 +18,44 @@ ON CONFLICT (espn_id) DO UPDATE SET
   wins = EXCLUDED.wins,
   updated_at = now();
 
--- 2. Seed a Sample Tournament
+-- 2. Seed a Sample Tournament (U.S. Open)
 INSERT INTO public.tournaments (id, espn_event_id, golfapi_course_id, name, course, location, par, yards, start_date, end_date, status, current_round, lock_time_utc)
 VALUES
   (
     'b1111111-1111-1111-1111-111111111111', 
-    '401811951', 
+    '401811952', 
     'shinnecock_hills_01', 
-    'RBC Canadian Open', 
-    'Hamilton Golf & Country Club', 
-    'Hamilton, Ontario, Canada', 
+    'U.S. Open', 
+    'Shinnecock Hills Golf Club', 
+    'Southampton, New York', 
     70, 
     7082, 
-    '2026-06-11', 
-    '2026-06-14', 
+    '2026-06-18', 
+    '2026-06-21', 
     'SCHEDULED', 
     1, 
-    '2026-06-11T11:00:00Z'
+    '2026-06-18T11:00:00Z'
   )
-ON CONFLICT (espn_event_id) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   course = EXCLUDED.course,
+  location = EXCLUDED.location,
+  par = EXCLUDED.par,
+  yards = EXCLUDED.yards,
+  start_date = EXCLUDED.start_date,
+  end_date = EXCLUDED.end_date,
   status = EXCLUDED.status,
-  lock_time_utc = EXCLUDED.lock_time_utc;
+  lock_time_utc = EXCLUDED.lock_time_utc,
+  espn_event_id = EXCLUDED.espn_event_id;
 
 -- 3. Seed Tournament Golfers with Prices and Statuses
 INSERT INTO public.tournament_golfers (id, tournament_id, golfer_profile_id, price, status)
 VALUES
-  ('c1111111-1111-1111-1111-111111111111', 'b1111111-1111-1111-1111-111111111111', 'a1111111-1111-1111-1111-111111111111', 30.50, 'ACTIVE'), -- Scottie
-  ('c2222222-2222-2222-2222-222222222222', 'b1111111-1111-1111-1111-111111111111', 'a2222222-2222-2222-2222-222222222222', 29.00, 'ACTIVE'), -- Rory
-  ('c3333333-3333-3333-3333-333333333333', 'b1111111-1111-1111-1111-111111111111', 'a3333333-3333-3333-3333-333333333333', 28.20, 'ACTIVE'), -- Jon
-  ('c4444444-4444-4444-4444-444444444444', 'b1111111-1111-1111-1111-111111111111', 'a4444444-4444-4444-4444-444444444444', 26.50, 'ACTIVE'), -- Cameron
-  ('c5555555-5555-5555-5555-555555555555', 'b1111111-1111-1111-1111-111111111111', 'a5555555-5555-5555-5555-555555555555', 20.00, 'ACTIVE'), -- Tiger
-  ('c6666666-6666-6666-6666-666666666666', 'b1111111-1111-1111-1111-111111111111', 'a6666666-6666-6666-6666-666666666666', 27.80, 'ACTIVE'), -- Collin
+  ('c1111111-1111-1111-1111-111111111111', 'b1111111-1111-1111-1111-111111111111', 'a1111111-1111-1111-1111-111111111111', 35.35, 'ACTIVE'), -- Scottie
+  ('c2222222-2222-2222-2222-222222222222', 'b1111111-1111-1111-1111-111111111111', 'a2222222-2222-2222-2222-222222222222', 33.50, 'ACTIVE'), -- Rory
+  ('c3333333-3333-3333-3333-333333333333', 'b1111111-1111-1111-1111-111111111111', 'a3333333-3333-3333-3333-333333333333', 33.00, 'ACTIVE'), -- Jon
+  ('c4444444-4444-4444-4444-444444444444', 'b1111111-1111-1111-1111-111111111111', 'a4444444-4444-4444-4444-444444444444', 34.11, 'ACTIVE'), -- Cameron
+  ('c5555555-5555-5555-5555-555555555555', 'b1111111-1111-1111-1111-111111111111', 'a5555555-5555-5555-5555-555555555555', 12.00, 'ACTIVE'), -- Tiger (floor fallback)
+  ('c6666666-6666-6666-6666-666666666666', 'b1111111-1111-1111-1111-111111111111', 'a6666666-6666-6666-6666-666666666666', 31.15, 'ACTIVE'), -- Collin
   ('c7777777-7777-7777-7777-777777777777', 'b1111111-1111-1111-1111-111111111111', 'a7777777-7777-7777-7777-777777777777', 28.00, 'ACTIVE')  -- Brooks
 ON CONFLICT (tournament_id, golfer_profile_id) DO NOTHING;

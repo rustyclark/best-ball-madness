@@ -14,18 +14,17 @@ class BbmSkeleton extends StatefulWidget {
     this.borderRadius = AppSpacing.borderRadiusSm,
   });
 
-  const BbmSkeleton.circular({
-    super.key,
-    required double size,
-  })  : width = size,
-        height = size,
-        borderRadius = AppSpacing.borderRadiusRound;
+  const BbmSkeleton.circular({super.key, required double size})
+    : width = size,
+      height = size,
+      borderRadius = AppSpacing.borderRadiusRound;
 
   @override
   State<BbmSkeleton> createState() => _BbmSkeletonState();
 }
 
-class _BbmSkeletonState extends State<BbmSkeleton> with SingleTickerProviderStateMixin {
+class _BbmSkeletonState extends State<BbmSkeleton>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
 
@@ -36,10 +35,11 @@ class _BbmSkeletonState extends State<BbmSkeleton> with SingleTickerProviderStat
       vsync: this,
       duration: const Duration(milliseconds: 1000),
     )..repeat(reverse: true);
-    
-    _animation = Tween<double>(begin: 0.35, end: 0.85).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+
+    _animation = Tween<double>(
+      begin: 0.35,
+      end: 0.85,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
