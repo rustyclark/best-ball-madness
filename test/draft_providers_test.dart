@@ -152,4 +152,41 @@ void main() {
     notifier.clear();
     expect(container.read(draftStateNotifierProvider), isEmpty);
   });
+
+  test(
+    'GolferProfile parses isAmateur and prior season stats from json correctly',
+    () {
+      final json = {
+        'id': 'gp-test',
+        'espn_id': 'test-123',
+        'name': 'Amateur Golfer',
+        'world_rank': 150,
+        'is_amateur': true,
+        'scoring_avg': 71.5,
+        'wins': 0,
+        'top_10s': 1,
+        'cuts_made': 2,
+        'events_played': 3,
+        'rounds_played': 12,
+        'prior_scoring_avg': 70.8,
+        'prior_wins': 1,
+        'prior_top_10s': 2,
+        'prior_cuts_made': 4,
+        'prior_events_played': 5,
+        'prior_rounds_played': 20,
+      };
+
+      final profile = GolferProfile.fromJson(json);
+
+      expect(profile.id, 'gp-test');
+      expect(profile.isAmateur, isTrue);
+      expect(profile.scoringAvg, 71.5);
+      expect(profile.priorScoringAvg, 70.8);
+      expect(profile.priorWins, 1);
+      expect(profile.priorTop10s, 2);
+      expect(profile.priorCutsMade, 4);
+      expect(profile.priorEventsPlayed, 5);
+      expect(profile.priorRoundsPlayed, 20);
+    },
+  );
 }

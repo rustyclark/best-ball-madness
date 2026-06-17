@@ -52,55 +52,148 @@ serve(async (req) => {
       }
     }
 
-    let updatedCount = 0
-    for (const golfer of golfers) {
-      const espnId = golfer.espn_id
-      const worldRank = rankMap.get(espnId) ?? null
-
-      // Fetch current-season statistics
+    const fetchStats = async (espnId: string, year: number) => {
       try {
-        const statsRes = await fetch(`https://sports.core.api.espn.com/v2/sports/golf/leagues/pga/seasons/${currentYear}/types/2/athletes/${espnId}/statistics`)
-        if (!statsRes.ok) {
-          // If no current season statistics, just update world rank
-          await supabaseClient
-            .from('golfer_profiles')
-            .update({ world_rank: worldRank })
-            .eq('id', golfer.id)
-          continue
+        const logUrl = `https://sports.core.api.espn.com/v2/sports/golf/athletes/${espnId}/statisticslog?lang=en&region=us`;
+        const logRes = await fetch(logUrl);
+        let matchingEntries = [];
+        if (logRes.ok) {
+          const logData = await logRes.json();
+          const entries = logData.entries || [];
+          matchingEntries = entries.filter((entry: any) => {
+            const ref = entry.season?.$ref || '';
+            return ref.includes(`/seasons/${year}`);
+          });
         }
-        
-        const statsData = await statsRes.json()
-        
-        const flatStats: Record<string, number> = {}
-        const categories = statsData.splits?.categories ?? statsData.categories ?? []
-        for (const cat of categories) {
-          const stats = cat.stats ?? cat.statistics ?? []
-          for (const stat of stats) {
-            if (stat.name && typeof stat.value === 'number') {
-              flatStats[stat.name] = stat.value
+
+        let bestStats: Record<string, number> | null = null;
+        let maxEvents = -1;
+
+        for (const entry of matchingEntries) {
+          if (entry.statistics && entry.statistics.length > 0) {
+            const statsUrl = entry.statistics[0].statistics?.$ref?.replace('http://', 'https://');
+            if (statsUrl) {
+              try {
+                const statsRes = await fetch(statsUrl);
+                if (statsRes.ok) {
+                  const statsData = await statsRes.json();
+                  const flatStats: Record<string, number> = {};
+                  const categories = statsData.splits?.categories ?? statsData.categories ?? [];
+                  for (const cat of categories) {
+                    const stats = cat.stats ?? cat.statistics ?? [];
+                    for (const stat of stats) {
+                      if (stat.name && typeof stat.value === 'number') {
+                        flatStats[stat.name] = stat.value;
+                      }
+                    }
+                  }
+                  
+                  // Sanitize and logically correct tournamentsPlayed and roundsPlayed
+                  const cutsMade = flatStats['cutsMade'] ? Math.round(flatStats['cutsMade']) : 0;
+                  const wins = flatStats['wins'] ? Math.round(flatStats['wins']) : 0;
+                  const top10s = flatStats['topTenFinishes'] ? Math.round(flatStats['topTenFinishes']) : 0;
+                  let eventsPlayed = flatStats['tournamentsPlayed'] ? Math.round(flatStats['tournamentsPlayed']) : 0;
+                  eventsPlayed = Math.max(eventsPlayed, cutsMade, wins, top10s);
+                  
+                  let roundsPlayed = flatStats['roundsPlayed'] ? Math.round(flatStats['roundsPlayed']) : 0;
+                  roundsPlayed = Math.max(roundsPlayed, eventsPlayed * 2);
+                  
+                  flatStats['tournamentsPlayed'] = eventsPlayed;
+                  flatStats['roundsPlayed'] = roundsPlayed;
+
+                  if (eventsPlayed > maxEvents) {
+                    maxEvents = eventsPlayed;
+                    bestStats = flatStats;
+                  }
+                }
+              } catch {
+                // Ignore and try next
+              }
             }
           }
         }
 
-        // Update current-season stats only
-        await supabaseClient
-          .from('golfer_profiles')
-          .update({
-            world_rank: worldRank,
-            scoring_avg: flatStats['scoringAverage'] ?? null,
-            wins: flatStats['wins'] ? Math.round(flatStats['wins']) : 0,
-            top_10s: flatStats['topTenFinishes'] ? Math.round(flatStats['topTenFinishes']) : 0,
-            cuts_made: flatStats['cutsMade'] ? Math.round(flatStats['cutsMade']) : 0,
-            events_played: flatStats['tournamentsPlayed'] ? Math.round(flatStats['tournamentsPlayed']) : 0,
-            rounds_played: flatStats['roundsPlayed'] ? Math.round(flatStats['roundsPlayed']) : 0,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', golfer.id)
+        if (bestStats) {
+          return bestStats;
+        }
 
-        updatedCount++
-      } catch (e) {
-        console.error(`Failed to update statistics for golfer ${golfer.name} (${golfer.id}): ${e.message}`)
+        const fallbackUrl = `https://sports.core.api.espn.com/v2/sports/golf/leagues/pga/seasons/${year}/types/2/athletes/${espnId}/statistics`;
+        const statsRes = await fetch(fallbackUrl);
+        if (!statsRes.ok) return null;
+        const statsData = await statsRes.json();
+        
+        const flatStats: Record<string, number> = {};
+        const categories = statsData.splits?.categories ?? statsData.categories ?? [];
+        for (const cat of categories) {
+          const stats = cat.stats ?? cat.statistics ?? [];
+          for (const stat of stats) {
+            if (stat.name && typeof stat.value === 'number') {
+              flatStats[stat.name] = stat.value;
+            }
+          }
+        }
+        
+        // Sanitize and logically correct fallback stats
+        const cutsMade = flatStats['cutsMade'] ? Math.round(flatStats['cutsMade']) : 0;
+        const wins = flatStats['wins'] ? Math.round(flatStats['wins']) : 0;
+        const top10s = flatStats['topTenFinishes'] ? Math.round(flatStats['topTenFinishes']) : 0;
+        let eventsPlayed = flatStats['tournamentsPlayed'] ? Math.round(flatStats['tournamentsPlayed']) : 0;
+        eventsPlayed = Math.max(eventsPlayed, cutsMade, wins, top10s);
+        
+        let roundsPlayed = flatStats['roundsPlayed'] ? Math.round(flatStats['roundsPlayed']) : 0;
+        roundsPlayed = Math.max(roundsPlayed, eventsPlayed * 2);
+        
+        flatStats['tournamentsPlayed'] = eventsPlayed;
+        flatStats['roundsPlayed'] = roundsPlayed;
+
+        return flatStats;
+      } catch {
+        return null;
       }
+    };
+
+    let updatedCount = 0;
+    const batchSize = 15;
+    for (let i = 0; i < golfers.length; i += batchSize) {
+      const batch = golfers.slice(i, i + batchSize);
+      await Promise.all(batch.map(async (golfer) => {
+        const espnId = golfer.espn_id;
+        const worldRank = rankMap.get(espnId) ?? null;
+
+        // Fetch current-season statistics
+        try {
+          const flatStats = await fetchStats(espnId, currentYear);
+          if (!flatStats) {
+            // If no current season statistics, just update world rank
+            await supabaseClient
+              .from('golfer_profiles')
+              .update({ world_rank: worldRank })
+              .eq('id', golfer.id);
+            return;
+          }
+
+          const cleanScoringAvg = (flatStats['scoringAverage'] && flatStats['scoringAverage'] > 0) ? flatStats['scoringAverage'] : null;
+
+          // Update current-season stats only
+          await supabaseClient
+            .from('golfer_profiles')
+            .update({
+              world_rank: worldRank,
+              scoring_avg: cleanScoringAvg,
+              wins: flatStats['wins'] ? Math.round(flatStats['wins']) : 0,
+              top_10s: flatStats['topTenFinishes'] ? Math.round(flatStats['topTenFinishes']) : 0,
+              cuts_made: flatStats['cutsMade'] ? Math.round(flatStats['cutsMade']) : 0,
+              events_played: flatStats['tournamentsPlayed'] ? Math.round(flatStats['tournamentsPlayed']) : 0,
+              rounds_played: flatStats['roundsPlayed'] ? Math.round(flatStats['roundsPlayed']) : 0,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', golfer.id);
+
+          updatedCount++;
+        } catch (e) {
+          console.error(`Failed to update statistics for golfer ${golfer.name} (${golfer.id}): ${e.message}`);
+        }
+      }));
     }
 
     return new Response(

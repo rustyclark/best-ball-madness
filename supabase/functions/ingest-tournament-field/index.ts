@@ -112,99 +112,186 @@ serve(async (req) => {
     const competitors = event.competitions?.[0]?.competitors || []
     const results = []
 
-    for (const competitor of competitors) {
-      const athlete = competitor.athlete
-      if (!athlete) continue
-      const espnId = athlete.id
-      const golferName = athlete.displayName
+    const batchSize = 15;
+    for (let i = 0; i < competitors.length; i += batchSize) {
+      const batch = competitors.slice(i, i + batchSize);
+      await Promise.all(batch.map(async (competitor) => {
+        const athlete = competitor.athlete;
+        if (!athlete) return;
+        const espnId = athlete.id;
+        const golferName = athlete.displayName;
+        const isAmateur = athlete.amateur === true;
 
-      // Get OWGR rank
-      const worldRank = rankMap.get(espnId) ?? null
+        // Get OWGR rank
+        const worldRank = rankMap.get(espnId) ?? null;
 
-      // Fetch stats helper
-      const fetchStats = async (year: number) => {
-        try {
-          const statsRes = await fetch(`https://sports.core.api.espn.com/v2/sports/golf/leagues/pga/seasons/${year}/types/2/athletes/${espnId}/statistics`)
-          if (!statsRes.ok) return null
-          const statsData = await statsRes.json()
-          
-          const flatStats: Record<string, number> = {}
-          const categories = statsData.splits?.categories ?? statsData.categories ?? []
-          for (const cat of categories) {
-            const stats = cat.stats ?? cat.statistics ?? []
-            for (const stat of stats) {
-              if (stat.name && typeof stat.value === 'number') {
-                flatStats[stat.name] = stat.value
+        // Fetch stats helper
+        const fetchStats = async (year: number) => {
+          try {
+            const logUrl = `https://sports.core.api.espn.com/v2/sports/golf/athletes/${espnId}/statisticslog?lang=en&region=us`;
+            const logRes = await fetch(logUrl);
+            let matchingEntries = [];
+            if (logRes.ok) {
+              const logData = await logRes.json();
+              const entries = logData.entries || [];
+              matchingEntries = entries.filter((entry: any) => {
+                const ref = entry.season?.$ref || '';
+                return ref.includes(`/seasons/${year}`);
+              });
+            }
+
+            let bestStats: Record<string, number> | null = null;
+            let maxEvents = -1;
+
+            for (const entry of matchingEntries) {
+              if (entry.statistics && entry.statistics.length > 0) {
+                const statsUrl = entry.statistics[0].statistics?.$ref?.replace('http://', 'https://');
+                if (statsUrl) {
+                  try {
+                    const statsRes = await fetch(statsUrl);
+                    if (statsRes.ok) {
+                      const statsData = await statsRes.json();
+                      const flatStats: Record<string, number> = {};
+                      const categories = statsData.splits?.categories ?? statsData.categories ?? [];
+                      for (const cat of categories) {
+                        const stats = cat.stats ?? cat.statistics ?? [];
+                        for (const stat of stats) {
+                          if (stat.name && typeof stat.value === 'number') {
+                            flatStats[stat.name] = stat.value;
+                          }
+                        }
+                      }
+                      
+                      // Sanitize and logically correct tournamentsPlayed and roundsPlayed
+                      const cutsMade = flatStats['cutsMade'] ? Math.round(flatStats['cutsMade']) : 0;
+                      const wins = flatStats['wins'] ? Math.round(flatStats['wins']) : 0;
+                      const top10s = flatStats['topTenFinishes'] ? Math.round(flatStats['topTenFinishes']) : 0;
+                      let eventsPlayed = flatStats['tournamentsPlayed'] ? Math.round(flatStats['tournamentsPlayed']) : 0;
+                      eventsPlayed = Math.max(eventsPlayed, cutsMade, wins, top10s);
+                      
+                      let roundsPlayed = flatStats['roundsPlayed'] ? Math.round(flatStats['roundsPlayed']) : 0;
+                      roundsPlayed = Math.max(roundsPlayed, eventsPlayed * 2);
+                      
+                      flatStats['tournamentsPlayed'] = eventsPlayed;
+                      flatStats['roundsPlayed'] = roundsPlayed;
+
+                      if (eventsPlayed > maxEvents) {
+                        maxEvents = eventsPlayed;
+                        bestStats = flatStats;
+                      }
+                    }
+                  } catch {
+                    // Ignore and try next
+                  }
+                }
               }
             }
+
+            if (bestStats) {
+              return bestStats;
+            }
+
+            const fallbackUrl = `https://sports.core.api.espn.com/v2/sports/golf/leagues/pga/seasons/${year}/types/2/athletes/${espnId}/statistics`;
+            const statsRes = await fetch(fallbackUrl);
+            if (!statsRes.ok) return null;
+            const statsData = await statsRes.json();
+            
+            const flatStats: Record<string, number> = {};
+            const categories = statsData.splits?.categories ?? statsData.categories ?? [];
+            for (const cat of categories) {
+              const stats = cat.stats ?? cat.statistics ?? [];
+              for (const stat of stats) {
+                if (stat.name && typeof stat.value === 'number') {
+                  flatStats[stat.name] = stat.value;
+                }
+              }
+            }
+            
+            // Sanitize and logically correct fallback stats
+            const cutsMade = flatStats['cutsMade'] ? Math.round(flatStats['cutsMade']) : 0;
+            const wins = flatStats['wins'] ? Math.round(flatStats['wins']) : 0;
+            const top10s = flatStats['topTenFinishes'] ? Math.round(flatStats['topTenFinishes']) : 0;
+            let eventsPlayed = flatStats['tournamentsPlayed'] ? Math.round(flatStats['tournamentsPlayed']) : 0;
+            eventsPlayed = Math.max(eventsPlayed, cutsMade, wins, top10s);
+            
+            let roundsPlayed = flatStats['roundsPlayed'] ? Math.round(flatStats['roundsPlayed']) : 0;
+            roundsPlayed = Math.max(roundsPlayed, eventsPlayed * 2);
+            
+            flatStats['tournamentsPlayed'] = eventsPlayed;
+            flatStats['roundsPlayed'] = roundsPlayed;
+
+            return flatStats;
+          } catch {
+            return null;
           }
-          return flatStats;
-        } catch {
-          return null
-        }
-      }
+        };
 
-      // Fetch current-season & prior-season stats
-      const currentStats = await fetchStats(currentYear)
-      const priorStats = await fetchStats(currentYear - 1)
+        // Fetch current-season & prior-season stats
+        const currentStats = await fetchStats(currentYear);
+        const priorStats = await fetchStats(currentYear - 1);
 
-      // 5. Upsert golfer profile
-      const profileData = {
-        espn_id: espnId,
-        name: golferName,
-        world_rank: worldRank,
-        scoring_avg: currentStats?.['scoringAverage'] ?? null,
-        wins: currentStats?.['wins'] ? Math.round(currentStats['wins']) : 0,
-        top_10s: currentStats?.['topTenFinishes'] ? Math.round(currentStats['topTenFinishes']) : 0,
-        cuts_made: currentStats?.['cutsMade'] ? Math.round(currentStats['cutsMade']) : 0,
-        events_played: currentStats?.['tournamentsPlayed'] ? Math.round(currentStats['tournamentsPlayed']) : 0,
-        rounds_played: currentStats?.['roundsPlayed'] ? Math.round(currentStats['roundsPlayed']) : 0,
-        
-        prior_scoring_avg: priorStats?.['scoringAverage'] ?? null,
-        prior_wins: priorStats?.['wins'] ? Math.round(priorStats['wins']) : 0,
-        prior_top_10s: priorStats?.['topTenFinishes'] ? Math.round(priorStats['topTenFinishes']) : 0,
-        prior_cuts_made: priorStats?.['cutsMade'] ? Math.round(priorStats['cutsMade']) : 0,
-        prior_events_played: priorStats?.['tournamentsPlayed'] ? Math.round(priorStats['tournamentsPlayed']) : 0,
-        prior_rounds_played: priorStats?.['roundsPlayed'] ? Math.round(priorStats['roundsPlayed']) : 0,
-        updated_at: new Date().toISOString(),
-      }
+        // Sanitize scoring averages (must be > 0)
+        const cleanScoringAvg = (currentStats && currentStats['scoringAverage'] && currentStats['scoringAverage'] > 0) ? currentStats['scoringAverage'] : null;
+        const cleanPriorScoringAvg = (priorStats && priorStats['scoringAverage'] && priorStats['scoringAverage'] > 0) ? priorStats['scoringAverage'] : null;
 
-      const { data: profile, error: pError } = await supabaseClient
-        .from('golfer_profiles')
-        .upsert(profileData, { onConflict: 'espn_id' })
-        .select()
-        .single()
-
-      if (pError || !profile) {
-        console.error(`Error upserting golfer ${golferName}: ${pError?.message}`)
-        continue
-      }
-
-      // 6. Upsert tournament_golfer row
-      // We set price to 20.00 by default; pricing algorithm will adjust it Wednesday evening.
-      const tgStatus = competitor.status?.type?.name === "STATUS_CUT" ? "MC" : 
-                       competitor.status?.type?.name === "STATUS_WITHDRAWN" ? "WD" : "ACTIVE";
-
-      const { data: tgRow, error: tgError } = await supabaseClient
-        .from('tournament_golfers')
-        .upsert({
-          tournament_id: tournament.id,
-          golfer_profile_id: profile.id,
-          price: 20.00, // default baseline
-          status: tgStatus,
-        }, { onConflict: 'tournament_id,golfer_profile_id' })
-        .select()
-        .single()
-
-      if (tgError) {
-        console.error(`Error linking golfer ${golferName} to tournament: ${tgError.message}`)
-      } else {
-        results.push({
+        // 5. Upsert golfer profile
+        const profileData = {
+          espn_id: espnId,
           name: golferName,
-          profile_id: profile.id,
-          tournament_golfer_id: tgRow.id,
-        })
-      }
+          world_rank: worldRank,
+          is_amateur: isAmateur,
+          scoring_avg: cleanScoringAvg,
+          wins: currentStats?.['wins'] ? Math.round(currentStats['wins']) : 0,
+          top_10s: currentStats?.['topTenFinishes'] ? Math.round(currentStats['topTenFinishes']) : 0,
+          cuts_made: currentStats?.['cutsMade'] ? Math.round(currentStats['cutsMade']) : 0,
+          events_played: currentStats?.['tournamentsPlayed'] ? Math.round(currentStats['tournamentsPlayed']) : 0,
+          rounds_played: currentStats?.['roundsPlayed'] ? Math.round(currentStats['roundsPlayed']) : 0,
+          
+          prior_scoring_avg: cleanPriorScoringAvg,
+          prior_wins: priorStats?.['wins'] ? Math.round(priorStats['wins']) : 0,
+          prior_top_10s: priorStats?.['topTenFinishes'] ? Math.round(priorStats['topTenFinishes']) : 0,
+          prior_cuts_made: priorStats?.['cutsMade'] ? Math.round(priorStats['cutsMade']) : 0,
+          prior_events_played: priorStats?.['tournamentsPlayed'] ? Math.round(priorStats['tournamentsPlayed']) : 0,
+          prior_rounds_played: priorStats?.['roundsPlayed'] ? Math.round(priorStats['roundsPlayed']) : 0,
+          updated_at: new Date().toISOString(),
+        };
+
+        const { data: profile, error: pError } = await supabaseClient
+          .from('golfer_profiles')
+          .upsert(profileData, { onConflict: 'espn_id' })
+          .select()
+          .single();
+
+        if (pError || !profile) {
+          console.error(`Error upserting golfer ${golferName}: ${pError?.message}`);
+          return;
+        }
+
+        // 6. Upsert tournament_golfer row
+        const tgStatus = competitor.status?.type?.name === "STATUS_CUT" ? "MC" : 
+                         competitor.status?.type?.name === "STATUS_WITHDRAWN" ? "WD" : "ACTIVE";
+
+        const { data: tgRow, error: tgError } = await supabaseClient
+          .from('tournament_golfers')
+          .upsert({
+            tournament_id: tournament.id,
+            golfer_profile_id: profile.id,
+            price: 20.00, // default baseline
+            status: tgStatus,
+          }, { onConflict: 'tournament_id,golfer_profile_id' })
+          .select()
+          .single();
+
+        if (tgError) {
+          console.error(`Error linking golfer ${golferName} to tournament: ${tgError.message}`);
+        } else {
+          results.push({
+            name: golferName,
+            profile_id: profile.id,
+            tournament_golfer_id: tgRow.id,
+          });
+        }
+      }));
     }
 
     // 7. Clean up non-entrants: delete any tournament_golfers for this tournament that were not in the fetched field

@@ -72,8 +72,14 @@ class _GolferTableState extends ConsumerState<GolferTable> {
           cmp = rA.compareTo(rB);
           break;
         case GolferSortColumn.average:
-          final avA = a.profile.scoringAvg ?? 999.0;
-          final avB = b.profile.scoringAvg ?? 999.0;
+          final avA =
+              (a.profile.scoringAvg != null && a.profile.scoringAvg! > 0)
+              ? a.profile.scoringAvg!
+              : 999.0;
+          final avB =
+              (b.profile.scoringAvg != null && b.profile.scoringAvg! > 0)
+              ? b.profile.scoringAvg!
+              : 999.0;
           cmp = avA.compareTo(avB);
           break;
       }
@@ -289,12 +295,41 @@ class _GolferTableState extends ConsumerState<GolferTable> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
-                        golfer.profile.name,
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              golfer.profile.name,
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (golfer.profile.isAmateur) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 5,
+                                vertical: 1.5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.statusScheduledBg,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Text(
+                                'AM',
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.statusScheduledText,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                       const SizedBox(height: 2),
                       if (golfer.status == 'WD' || golfer.status == 'MC')
@@ -306,13 +341,41 @@ class _GolferTableState extends ConsumerState<GolferTable> {
                             fontWeight: FontWeight.bold,
                           ),
                         )
-                      else if (golfer.teeTime != null)
-                        Text(
-                          _formatTeeTime(golfer.teeTime!),
-                          style: const TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 11,
-                          ),
+                      else
+                        Row(
+                          children: [
+                            if (!golfer.profile.isAmateur &&
+                                (golfer.profile.eventsPlayed == null ||
+                                    golfer.profile.eventsPlayed == 0)) ...[
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 5,
+                                  vertical: 1.5,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.statusLiveBg,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: const Text(
+                                  'LIV / INTL',
+                                  style: TextStyle(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.statusLiveText,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                            ],
+                            if (golfer.teeTime != null)
+                              Text(
+                                _formatTeeTime(golfer.teeTime!),
+                                style: const TextStyle(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 11,
+                                ),
+                              ),
+                          ],
                         ),
                     ],
                   ),
@@ -370,52 +433,93 @@ class _GolferTableState extends ConsumerState<GolferTable> {
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'SCORING AVERAGE',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textSecondary,
+                  // Current Season Column
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'CURRENT SEASON',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary,
+                            letterSpacing: 0.5,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        golfer.profile.scoringAvg != null
-                            ? golfer.profile.scoringAvg!.toStringAsFixed(1)
-                            : '-',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
+                        const SizedBox(height: 6),
+                        _buildStatRow(
+                          'Avg Score',
+                          (golfer.profile.scoringAvg != null &&
+                                  golfer.profile.scoringAvg! > 0)
+                              ? golfer.profile.scoringAvg!.toStringAsFixed(1)
+                              : '-',
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 4),
+                        _buildStatRow(
+                          'Events (Rounds)',
+                          '${golfer.profile.eventsPlayed ?? 0} (${golfer.profile.roundsPlayed ?? 0})',
+                        ),
+                        const SizedBox(height: 4),
+                        _buildStatRow(
+                          'Wins / T10s',
+                          '${golfer.profile.wins ?? 0}W / ${golfer.profile.top10s ?? 0}T10',
+                        ),
+                        const SizedBox(height: 4),
+                        _buildStatRow(
+                          'Cuts Made',
+                          '${golfer.profile.cutsMade ?? 0} / ${golfer.profile.eventsPlayed ?? 0}',
+                        ),
+                      ],
+                    ),
                   ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      const Text(
-                        'STATS (W / T10 / CUTS)',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textSecondary,
+                  const SizedBox(width: AppSpacing.md),
+                  // Vertical divider
+                  Container(height: 80, width: 1, color: AppColors.border),
+                  const SizedBox(width: AppSpacing.md),
+                  // Prior Season Column
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'PRIOR SEASON',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textSecondary,
+                            letterSpacing: 0.5,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${golfer.profile.wins ?? 0}W / ${golfer.profile.top10s ?? 0}T10 / ${golfer.profile.cutsMade ?? 0}C',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
+                        const SizedBox(height: 6),
+                        _buildStatRow(
+                          'Avg Score',
+                          (golfer.profile.priorScoringAvg != null &&
+                                  golfer.profile.priorScoringAvg! > 0)
+                              ? golfer.profile.priorScoringAvg!.toStringAsFixed(
+                                  1,
+                                )
+                              : '-',
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 4),
+                        _buildStatRow(
+                          'Events (Rounds)',
+                          '${golfer.profile.priorEventsPlayed ?? 0} (${golfer.profile.priorRoundsPlayed ?? 0})',
+                        ),
+                        const SizedBox(height: 4),
+                        _buildStatRow(
+                          'Wins / T10s',
+                          '${golfer.profile.priorWins ?? 0}W / ${golfer.profile.priorTop10s ?? 0}T10',
+                        ),
+                        const SizedBox(height: 4),
+                        _buildStatRow(
+                          'Cuts Made',
+                          '${golfer.profile.priorCutsMade ?? 0} / ${golfer.profile.priorEventsPlayed ?? 0}',
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -427,6 +531,26 @@ class _GolferTableState extends ConsumerState<GolferTable> {
           duration: const Duration(milliseconds: 150),
         ),
         const Divider(height: 1, color: AppColors.border),
+      ],
+    );
+  }
+
+  Widget _buildStatRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
+        ),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+        ),
       ],
     );
   }
