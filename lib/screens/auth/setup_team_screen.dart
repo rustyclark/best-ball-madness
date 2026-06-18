@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../providers/auth_providers.dart';
+import '../../providers/draft_providers.dart';
 import '../../theme/colors.dart';
 import '../../theme/spacing.dart';
 import '../../widgets/button.dart';
@@ -76,6 +77,16 @@ class _SetupTeamScreenState extends ConsumerState<SetupTeamScreen> {
         'email': session.user.email,
         'team_name': teamName,
       });
+
+      // Insert empty team record for the active tournament if one exists
+      final activeTournament = ref.read(activeTournamentProvider).value;
+      if (activeTournament != null) {
+        await client.from('teams').insert({
+          'user_id': session.user.id,
+          'tournament_id': activeTournament.id,
+          'status': 'ACTIVE',
+        });
+      }
 
       // 3. Invalidate the userProfileProvider to trigger routing update
       ref.invalidate(userProfileProvider);

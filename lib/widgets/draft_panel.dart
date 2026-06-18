@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/draft_providers.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
+import '../utils/score_utils.dart';
 import 'badge.dart';
 import 'button.dart';
 import 'card.dart';
@@ -115,6 +116,9 @@ class _DraftPanelState extends ConsumerState<DraftPanel> {
           ...List.generate(4, (index) {
             if (index < selectedGolfers.length) {
               final golfer = selectedGolfers[index];
+              final isGolferLocked = widget.isLocked || (golfer.teeTime != null &&
+                  DateTime.now().toUtc().isAfter(golfer.teeTime!.subtract(const Duration(minutes: 15))));
+
               return Container(
                 margin: const EdgeInsets.only(bottom: AppSpacing.xs),
                 padding: const EdgeInsets.symmetric(
@@ -157,10 +161,27 @@ class _DraftPanelState extends ConsumerState<DraftPanel> {
                               color: AppColors.textSecondary,
                             ),
                           ),
+                          if (golfer.teeTime != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 2.0),
+                              child: Text(
+                                isGolferLocked
+                                    ? '🔒 Locked (Teed off)'
+                                    : 'Tee Time: ${formatTeeTime(golfer.teeTime!)}',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: isGolferLocked
+                                      ? AppColors.scoreBogeyBg
+                                      : AppColors.primary,
+                                  fontWeight: isGolferLocked
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                     ),
-                    if (!widget.isLocked)
+                    if (!isGolferLocked)
                       IconButton(
                         icon: const Icon(
                           Icons.remove_circle_outline,
@@ -173,6 +194,15 @@ class _DraftPanelState extends ConsumerState<DraftPanel> {
                               .removeGolfer(golfer);
                         },
                         tooltip: 'Remove',
+                      )
+                    else
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 12.0),
+                        child: Icon(
+                          Icons.lock_outline,
+                          color: AppColors.textSecondary,
+                          size: 20,
+                        ),
                       ),
                   ],
                 ),

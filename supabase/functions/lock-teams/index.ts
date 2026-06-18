@@ -68,8 +68,47 @@ serve(async (req) => {
           spend += Number(price)
         }
 
-        // DQ condition: roster is incomplete (< 4 golfers) or budget exceeded
-        if (count < 4 || spend > 100) {
+        let isDq = false
+        let dqReason = ""
+
+        if (count > 0) {
+          if (count < 4) {
+            isDq = true
+            dqReason = "incomplete"
+          } else if (spend > 100) {
+            isDq = true
+            dqReason = "over_budget"
+          }
+        } else {
+          // If count === 0 (empty team), check if it's still possible to draft 4 golfers who haven't teed off
+          const { data: availableGolfers, error: availError } = await supabaseClient
+            .from('tournament_golfers')
+            .select(`
+              id,
+              tee_times (
+                tee_time_utc,
+                round
+              )
+            `)
+            .eq('tournament_id', tournament.id)
+
+          if (!availError && availableGolfers) {
+            const now = new Date()
+            const unteedGolfers = availableGolfers.filter((g: any) => {
+              const r1Tee = (g.tee_times || []).find((t: any) => t.round === 1)
+              if (!r1Tee || !r1Tee.tee_time_utc) return true
+              return now < new Date(r1Tee.tee_time_utc)
+            })
+
+            if (unteedGolfers.length < 4) {
+              isDq = true
+              dqReason = "incomplete"
+            }
+          }
+        }
+
+        // DQ condition: roster is incomplete or budget exceeded
+        if (isDq) {
           const { error: updateError } = await supabaseClient
             .from('teams')
             .update({ status: 'DQ' })
@@ -78,7 +117,7 @@ serve(async (req) => {
           if (updateError) {
             console.error(`Failed to DQ team ${team.id}: ${updateError.message}`)
           } else {
-            dqUpdates.push({ team_id: team.id, reason: count < 4 ? "incomplete" : "over_budget" })
+            dqUpdates.push({ team_id: team.id, reason: dqReason })
           }
         }
       }
