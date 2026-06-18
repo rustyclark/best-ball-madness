@@ -121,6 +121,9 @@ INSERT INTO public.team_golfers (team_id, tournament_golfer_id) VALUES
   ('00000000-0000-0000-0000-000000000202', '00000000-0000-0000-0000-000000000404'),
   ('00000000-0000-0000-0000-000000000202', '00000000-0000-0000-0000-000000000405'); -- Roster price: 30 + 25 + 20 + 20 = $95 (T1 has price 30+25+25+20 = $100)
 
+-- Reset team 2 status back to ACTIVE after inserting golfers so that trigger evaluates it as ACTIVE (since it was CUT due to having 0 golfers on insert)
+UPDATE public.teams SET status = 'ACTIVE' WHERE id = '00000000-0000-0000-0000-000000000202';
+
 -- We will insert hole scores to create a tie on total_to_par, but Team 2 has lower budget used ($95 vs $100).
 -- Team 2 should be ranked 1, and Team 1 should be ranked 2.
 -- Insert simple hole scores for round 1
@@ -156,12 +159,22 @@ SELECT table_privs_are('public', 'team_round_scores', 'authenticated', ARRAY['SE
 SELECT table_privs_are('public', 'team_standings', 'authenticated', ARRAY['SELECT', 'REFERENCES', 'TRIGGER', 'TRUNCATE'], 'authenticated role can select on team_standings');
 
 -- 6. Setup tee times and test golfer-level locking triggers
+-- Create a third user and team to test locking on an empty team without roster limits interfering
+INSERT INTO auth.users (id, email) VALUES 
+  ('00000000-0000-0000-0000-000000000003', 'user3@example.com');
+
+INSERT INTO public.users (id, email, team_name) VALUES
+  ('00000000-0000-0000-0000-000000000003', 'user3@example.com', 'Team Gamma');
+
+INSERT INTO public.teams (id, user_id, tournament_id, status) VALUES
+  ('00000000-0000-0000-0000-000000000203', '00000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000100', 'ACTIVE');
+
 INSERT INTO public.tee_times (tournament_golfer_id, round, tee_time_utc)
 VALUES ('00000000-0000-0000-0000-000000000405', 1, now() - INTERVAL '30 minutes');
 
 -- Try to insert a locked golfer (should throw lock error)
 SELECT throws_ok(
-  $$ INSERT INTO public.team_golfers (team_id, tournament_golfer_id) VALUES ('00000000-0000-0000-0000-000000000201', '00000000-0000-0000-0000-000000000405') $$,
+  $$ INSERT INTO public.team_golfers (team_id, tournament_golfer_id) VALUES ('00000000-0000-0000-0000-000000000203', '00000000-0000-0000-0000-000000000405') $$,
   'Golfer has already teed off and cannot be added to roster'
 );
 
@@ -170,7 +183,7 @@ INSERT INTO public.tee_times (tournament_golfer_id, round, tee_time_utc)
 VALUES ('00000000-0000-0000-0000-000000000406', 1, now() + INTERVAL '1 hour');
 
 INSERT INTO public.team_golfers (team_id, tournament_golfer_id)
-VALUES ('00000000-0000-0000-0000-000000000202', '00000000-0000-0000-0000-000000000406');
+VALUES ('00000000-0000-0000-0000-000000000203', '00000000-0000-0000-0000-000000000406');
 
 -- Update tee time to past
 UPDATE public.tee_times SET tee_time_utc = now() - INTERVAL '20 minutes'
@@ -178,7 +191,7 @@ WHERE tournament_golfer_id = '00000000-0000-0000-0000-000000000406' AND round = 
 
 -- Try to delete the locked golfer (should throw lock error)
 SELECT throws_ok(
-  $$ DELETE FROM public.team_golfers WHERE team_id = '00000000-0000-0000-0000-000000000202' AND tournament_golfer_id = '00000000-0000-0000-0000-000000000406' $$,
+  $$ DELETE FROM public.team_golfers WHERE team_id = '00000000-0000-0000-0000-000000000203' AND tournament_golfer_id = '00000000-0000-0000-0000-000000000406' $$,
   'Golfer has already teed off and cannot be removed from roster'
 );
 
