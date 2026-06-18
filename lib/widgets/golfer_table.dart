@@ -219,6 +219,9 @@ class _GolferTableState extends ConsumerState<GolferTable> {
     bool isExpanded,
     ThemeData theme,
   ) {
+    final isGolferLocked = widget.isLocked || (golfer.teeTime != null &&
+        DateTime.now().toUtc().isAfter(golfer.teeTime!.subtract(const Duration(minutes: 15))));
+
     return Column(
       children: [
         InkWell(
@@ -236,7 +239,7 @@ class _GolferTableState extends ConsumerState<GolferTable> {
             child: Row(
               children: [
                 // Selection action button next to name
-                if (widget.isLocked)
+                if (isGolferLocked)
                   Padding(
                     padding: const EdgeInsets.only(right: AppSpacing.sm),
                     child: isSelected
@@ -367,14 +370,32 @@ class _GolferTableState extends ConsumerState<GolferTable> {
                               ),
                               const SizedBox(width: 6),
                             ],
-                            if (golfer.teeTime != null)
-                              Text(
-                                _formatTeeTime(golfer.teeTime!),
-                                style: const TextStyle(
-                                  color: AppColors.textSecondary,
-                                  fontSize: 11,
+                            if (golfer.teeTime != null) ...[
+                              if (DateTime.now().toUtc().isAfter(golfer.teeTime!.subtract(const Duration(minutes: 15)))) ...[
+                                const Icon(
+                                  Icons.lock,
+                                  color: AppColors.scoreBogeyBg,
+                                  size: 11,
                                 ),
-                              ),
+                                const SizedBox(width: 3),
+                                Text(
+                                  'LOCKED (${_formatTeeTime(golfer.teeTime!)})',
+                                  style: const TextStyle(
+                                    color: AppColors.scoreBogeyBg,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ] else ...[
+                                Text(
+                                  _formatTeeTime(golfer.teeTime!),
+                                  style: const TextStyle(
+                                    color: AppColors.textSecondary,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ],
                           ],
                         ),
                     ],

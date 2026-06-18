@@ -326,7 +326,7 @@ void main() {
         tester.view.resetDevicePixelRatio();
       });
 
-      // Set active tournament to LOCKED
+      // Set active tournament to COMPLETED (representing locked roster post-tournament)
       mockTournament = Tournament(
         id: 't-1',
         espnEventId: 'espn-1',
@@ -335,13 +335,13 @@ void main() {
         location: 'Augusta, GA',
         par: 72,
         yards: 7400,
-        startDate: DateTime.now().subtract(const Duration(days: 1)),
-        endDate: DateTime.now().add(const Duration(days: 2)),
-        status: 'IN_PROGRESS',
-        currentRound: 1,
+        startDate: DateTime.now().subtract(const Duration(days: 4)),
+        endDate: DateTime.now().subtract(const Duration(days: 1)),
+        status: 'COMPLETED',
+        currentRound: 4,
         lockTimeUtc: DateTime.now()
-            .subtract(const Duration(minutes: 10))
-            .toUtc(), // Lock time passed 10 minutes ago
+            .subtract(const Duration(days: 4))
+            .toUtc(),
       );
 
       // Set user profile as already created
@@ -376,12 +376,6 @@ void main() {
 
       // Screen should directly load Dashboard Screen
       expect(find.byType(DashboardScreen), findsOneWidget);
-
-      // Verify that lock time banner is displayed on the dashboard
-      expect(
-        find.textContaining('Drafting has closed. Roster locked on'),
-        findsOneWidget,
-      );
 
       // Verify that DraftPanel shows "ROSTER LOCKED" instead of "Save Team"
       expect(find.text('ROSTER LOCKED'), findsOneWidget);

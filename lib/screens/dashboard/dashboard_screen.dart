@@ -78,10 +78,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final activeTournament = tournamentAsync.value;
     final golfers = golferListAsync.value ?? [];
 
-    // Check lock status
-    final isLocked =
-        activeTournament?.lockTimeUtc != null &&
-        DateTime.now().toUtc().isAfter(activeTournament!.lockTimeUtc!);
+    // Check lock status: tournament is locked only if completed
+    final isLocked = activeTournament?.status == 'COMPLETED';
 
     // Check if any golfer on user's SAVED roster is WD pre-lock
     final userTeam = userTeamAsync.value;
@@ -158,14 +156,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 const SizedBox(height: AppSpacing.md),
               ],
 
-              // Lock Time Banner (Post-lock only)
-              if (isLocked && activeTournament.lockTimeUtc != null) ...[
+              // Lock Info Banner (informational post-lock/during draft)
+              if (activeTournament != null && activeTournament.status != 'COMPLETED') ...[
                 _buildBanner(
                   text:
-                      'Drafting has closed. Roster locked on ${formatLockTime(activeTournament.lockTimeUtc!)}.',
-                  bgColor: AppColors.border,
-                  textColor: AppColors.textSecondary,
-                  icon: Icons.lock_clock,
+                      'Drafting is open! Golfers lock individually 15 minutes prior to their tee times.',
+                  bgColor: AppColors.primary,
+                  textColor: AppColors.primary,
+                  icon: Icons.lock_clock_outlined,
                 ),
                 const SizedBox(height: AppSpacing.md),
               ],
@@ -449,31 +447,4 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       ),
     );
   }
-}
-
-String formatLockTime(DateTime dateTime) {
-  final localTime = dateTime.toLocal();
-  final hour = localTime.hour;
-  final minute = localTime.minute.toString().padLeft(2, '0');
-  final period = hour >= 12 ? 'PM' : 'AM';
-  final displayHour = hour % 12 == 0 ? 12 : hour % 12;
-
-  final months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-  final month = months[localTime.month - 1];
-  final day = localTime.day;
-
-  return '$month $day at $displayHour:$minute $period';
 }

@@ -169,9 +169,8 @@ final saveTeamAction = Provider<Future<void> Function(List<TournamentGolfer>)>((
       throw Exception('Budget of \$100 exceeded');
     }
 
-    if (activeTournament.lockTimeUtc != null &&
-        DateTime.now().toUtc().isAfter(activeTournament.lockTimeUtc!)) {
-      throw Exception('Tournament has locked. Cannot modify roster.');
+    if (activeTournament.status == 'COMPLETED') {
+      throw Exception('Tournament has completed. Cannot modify roster.');
     }
 
     final existingTeam = ref.read(userTeamProvider).value;
@@ -188,20 +187,37 @@ final saveTeamAction = Provider<Future<void> Function(List<TournamentGolfer>)>((
           .select()
           .single();
       teamId = teamInsert['id'] as String;
+
+      final List<Map<String, dynamic>> teamGolfersRows = selectedGolfers.map((
+        golfer,
+      ) {
+        return {'team_id': teamId, 'tournament_golfer_id': golfer.id};
+      }).toList();
+
+      await client.from('team_golfers').insert(teamGolfersRows);
     } else {
       teamId = existingTeam.id;
-      // Clear current team_golfers first
-      await client.from('team_golfers').delete().eq('team_id', teamId);
+      final currentGolferIds = existingTeam.golferIds;
+      final newGolferIds = selectedGolfers.map((g) => g.id).toList();
+
+      final toRemove = currentGolferIds.where((id) => !newGolferIds.contains(id)).toList();
+      final toAdd = newGolferIds.where((id) => !currentGolferIds.contains(id)).toList();
+
+      if (toRemove.isNotEmpty) {
+        await client
+            .from('team_golfers')
+            .delete()
+            .eq('team_id', teamId)
+            .inFilter('tournament_golfer_id', toRemove);
+      }
+
+      if (toAdd.isNotEmpty) {
+        final List<Map<String, dynamic>> teamGolfersRows = toAdd.map((id) {
+          return {'team_id': teamId, 'tournament_golfer_id': id};
+        }).toList();
+        await client.from('team_golfers').insert(teamGolfersRows);
+      }
     }
-
-    // Insert selected golfers
-    final List<Map<String, dynamic>> teamGolfersRows = selectedGolfers.map((
-      golfer,
-    ) {
-      return {'team_id': teamId, 'tournament_golfer_id': golfer.id};
-    }).toList();
-
-    await client.from('team_golfers').insert(teamGolfersRows);
 
     // Refresh userTeamProvider to update the UI status
     ref.invalidate(userTeamProvider);
