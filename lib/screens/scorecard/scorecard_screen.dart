@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/draft_providers.dart';
+import '../../providers/auth_providers.dart';
 import '../../providers/scorecard_providers.dart';
 import '../../providers/leaderboard_providers.dart';
 import '../../theme/colors.dart';
@@ -120,6 +121,8 @@ class ScorecardScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final tournamentAsync = ref.watch(activeTournamentProvider);
     final golferListAsync = ref.watch(golferListProvider);
+    final sessionAsync = ref.watch(authSessionProvider);
+    final currentUserId = sessionAsync.value?.user.id;
 
     final isCompetitor = teamId != null;
     final AsyncValue<UserTeam?> teamAsync = isCompetitor
@@ -328,28 +331,42 @@ class ScorecardScreen extends ConsumerWidget {
                                 ],
                                 headers: _buildTableHeaders(theme),
                                 rows: [
-                                  // Golfer rows
-                                  ...teamGolfers.asMap().entries.map((entry) {
-                                    final index = entry.key;
-                                    final golfer = entry.value;
-                                    final golferScores = scores
-                                        .where(
-                                          (s) =>
-                                              s.tournamentGolferId == golfer.id,
-                                        )
-                                        .toList();
-                                    return _buildGolferRow(
-                                      golfer: golfer,
-                                      scores: golferScores,
-                                      teeTimes: teeTimes,
-                                      teamScores: teamScores,
-                                      allScores: scores,
-                                      theme: theme,
-                                      backgroundColor: index % 2 == 1
-                                          ? AppColors.alternateRow
-                                          : Colors.transparent,
-                                    );
-                                  }),
+                                  // Golfer rows (pad with concealed placeholders for competitors)
+                                  ...List.generate(
+                                    (!isCompetitor || team.userId == currentUserId)
+                                        ? teamGolfers.length
+                                        : 4,
+                                    (index) {
+                                      if (index < teamGolfers.length) {
+                                        final golfer = teamGolfers[index];
+                                        final golferScores = scores
+                                            .where(
+                                              (s) =>
+                                                  s.tournamentGolferId == golfer.id,
+                                            )
+                                            .toList();
+                                        return _buildGolferRow(
+                                          golfer: golfer,
+                                          scores: golferScores,
+                                          teeTimes: teeTimes,
+                                          teamScores: teamScores,
+                                          allScores: scores,
+                                          theme: theme,
+                                          backgroundColor: index % 2 == 1
+                                              ? AppColors.alternateRow
+                                              : Colors.transparent,
+                                        );
+                                      } else {
+                                        return _buildConcealedRow(
+                                          index: index,
+                                          theme: theme,
+                                          backgroundColor: index % 2 == 1
+                                              ? AppColors.alternateRow
+                                              : Colors.transparent,
+                                        );
+                                      }
+                                    },
+                                  ),
 
                                   // Team Best Ball row divider
                                   const Divider(
@@ -672,6 +689,73 @@ class ScorecardScreen extends ConsumerWidget {
             hasScores ? '$roundTotal' : '-',
             style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildConcealedRow({
+    required int index,
+    required ThemeData theme,
+    required Color backgroundColor,
+  }) {
+    return BbmTableRow(
+      columnWidths: [3.0, ...List.generate(18, (_) => 1.0), 1.5],
+      backgroundColor: backgroundColor,
+      cells: [
+        // Name & Status placeholder
+        Padding(
+          padding: const EdgeInsets.only(left: AppSpacing.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                '🔒 Roster Slot Hidden',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textSecondary,
+                  fontStyle: FontStyle.italic,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Concealed until tee time',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: AppColors.textMuted,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // 18 disabled/locked hole cells
+        ...List.generate(18, (index) {
+          return Container(
+            margin: const EdgeInsets.all(2.0),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: AppColors.alternateRow.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(4.0),
+            ),
+            child: Text(
+              '-',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: AppColors.textMuted,
+              ),
+            ),
+          );
+        }),
+
+        // Total placeholder
+        Center(
+          child: Text(
+            '-',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: AppColors.textMuted,
             ),
           ),
         ),

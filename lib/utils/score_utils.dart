@@ -83,3 +83,31 @@ String formatTeeTime(DateTime dateTime) {
   final displayHour = hour % 12 == 0 ? 12 : hour % 12;
   return '$displayHour:$minute $period';
 }
+
+/// Helper function to format tournament lock time (e.g. Jun 18 at 10:30 AM)
+String formatLockTime(DateTime dateTime) {
+  final localTime = dateTime.toLocal();
+  final hour = localTime.hour;
+  final minute = localTime.minute.toString().padLeft(2, '0');
+  final period = hour >= 12 ? 'PM' : 'AM';
+  final displayHour = hour % 12 == 0 ? 12 : hour % 12;
+
+  final months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+  final month = months[localTime.month - 1];
+  final day = localTime.day;
+
+  return '$month $day at $displayHour:$minute $period';
+}

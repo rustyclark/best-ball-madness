@@ -422,6 +422,61 @@ void main() {
       expect(find.text('Golfer Name 0'), findsNothing);
     },
   );
+
+  testWidgets('DraftPanel enforces individual golfer tee-time locking', (
+    WidgetTester tester,
+  ) async {
+    final lockedGolfer = TournamentGolfer(
+      id: 'tg-locked',
+      tournamentId: 't-1',
+      golferProfileId: 'gp-locked',
+      price: 25.00,
+      status: 'ACTIVE',
+      profile: GolferProfile(
+        id: 'gp-locked',
+        espnId: 'locked',
+        name: 'Locked Scheffler',
+      ),
+      teeTime: DateTime.now().subtract(const Duration(minutes: 20)).toUtc(), // Teed off 20 minutes ago
+    );
+
+    final unlockedGolfer = TournamentGolfer(
+      id: 'tg-unlocked',
+      tournamentId: 't-1',
+      golferProfileId: 'gp-unlocked',
+      price: 25.00,
+      status: 'ACTIVE',
+      profile: GolferProfile(
+        id: 'gp-unlocked',
+        espnId: 'unlocked',
+        name: 'Unlocked McIlroy',
+      ),
+      teeTime: DateTime.now().add(const Duration(hours: 1)).toUtc(), // Tees off in 1 hour
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          draftStateNotifierProvider.overrideWith(
+            () => TestDraftStateNotifier([lockedGolfer, unlockedGolfer]),
+          ),
+        ],
+        child: const MaterialApp(
+          home: Scaffold(
+            body: DraftPanel(isLocked: false),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    // The locked golfer row should show lock icon instead of remove button
+    expect(find.byIcon(Icons.lock_outline), findsOneWidget);
+
+    // The unlocked golfer row should show remove button
+    expect(find.byIcon(Icons.remove_circle_outline), findsOneWidget);
+  });
 }
 
 class TestDraftStateNotifier extends DraftStateNotifier {

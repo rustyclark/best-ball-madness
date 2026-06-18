@@ -1,6 +1,6 @@
 -- Start transaction and plan tests
 BEGIN;
-SELECT plan(16);
+SELECT plan(19);
 
 -- Verify extensions
 SELECT has_extension('uuid-ossp');
@@ -154,6 +154,40 @@ SELECT table_privs_are('public', 'golfer_profiles', 'authenticated', ARRAY['SELE
 SELECT table_privs_are('public', 'team_hole_scores', 'authenticated', ARRAY['SELECT', 'REFERENCES', 'TRIGGER', 'TRUNCATE'], 'authenticated role can select on team_hole_scores');
 SELECT table_privs_are('public', 'team_round_scores', 'authenticated', ARRAY['SELECT', 'REFERENCES', 'TRIGGER', 'TRUNCATE'], 'authenticated role can select on team_round_scores');
 SELECT table_privs_are('public', 'team_standings', 'authenticated', ARRAY['SELECT', 'REFERENCES', 'TRIGGER', 'TRUNCATE'], 'authenticated role can select on team_standings');
+
+-- 6. Setup tee times and test golfer-level locking triggers
+INSERT INTO public.tee_times (tournament_golfer_id, round, tee_time_utc)
+VALUES ('00000000-0000-0000-0000-000000000405', 1, now() - INTERVAL '30 minutes');
+
+-- Try to insert a locked golfer (should throw lock error)
+SELECT throws_ok(
+  $$ INSERT INTO public.team_golfers (team_id, tournament_golfer_id) VALUES ('00000000-0000-0000-0000-000000000201', '00000000-0000-0000-0000-000000000405') $$,
+  'Golfer has already teed off and cannot be added to roster'
+);
+
+-- Put a golfer on a roster with a future tee time, then update their tee time to past and try to delete
+INSERT INTO public.tee_times (tournament_golfer_id, round, tee_time_utc)
+VALUES ('00000000-0000-0000-0000-000000000406', 1, now() + INTERVAL '1 hour');
+
+INSERT INTO public.team_golfers (team_id, tournament_golfer_id)
+VALUES ('00000000-0000-0000-0000-000000000202', '00000000-0000-0000-0000-000000000406');
+
+-- Update tee time to past
+UPDATE public.tee_times SET tee_time_utc = now() - INTERVAL '20 minutes'
+WHERE tournament_golfer_id = '00000000-0000-0000-0000-000000000406' AND round = 1;
+
+-- Try to delete the locked golfer (should throw lock error)
+SELECT throws_ok(
+  $$ DELETE FROM public.team_golfers WHERE team_id = '00000000-0000-0000-0000-000000000202' AND tournament_golfer_id = '00000000-0000-0000-0000-000000000406' $$,
+  'Golfer has already teed off and cannot be removed from roster'
+);
+
+-- Test trigger trg_recompute_leaderboard is fired on inserting teams
+SELECT results_eq(
+  $$ SELECT COUNT(*) FROM public.leaderboard_standings WHERE team_id = '00000000-0000-0000-0000-000000000202' $$,
+  $$ VALUES (1::bigint) $$,
+  'Leaderboard standings mirror record automatically created/updated via teams trigger'
+);
 
 -- Finish tests
 SELECT * FROM finish();
