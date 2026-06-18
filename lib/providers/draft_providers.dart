@@ -52,8 +52,7 @@ final golferListProvider = FutureProvider.autoDispose<List<TournamentGolfer>>((
   ref,
 ) async {
   final client = ref.watch(supabaseClientProvider);
-  final activeTournamentAsync = ref.watch(activeTournamentProvider);
-  final activeTournament = activeTournamentAsync.value;
+  final activeTournament = await ref.watch(activeTournamentProvider.future);
 
   if (activeTournament == null) {
     return [];
@@ -76,11 +75,8 @@ final golferListProvider = FutureProvider.autoDispose<List<TournamentGolfer>>((
 /// Fetches the user's saved team for the active tournament.
 final userTeamProvider = FutureProvider.autoDispose<UserTeam?>((ref) async {
   final client = ref.watch(supabaseClientProvider);
-  final activeTournamentAsync = ref.watch(activeTournamentProvider);
-  final sessionAsync = ref.watch(authSessionProvider);
-
-  final activeTournament = activeTournamentAsync.value;
-  final session = sessionAsync.value;
+  final activeTournament = await ref.watch(activeTournamentProvider.future);
+  final session = await ref.watch(authSessionProvider.future);
 
   if (activeTournament == null || session == null) {
     return null;
