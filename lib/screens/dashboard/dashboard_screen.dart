@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/auth_providers.dart';
 import '../../providers/draft_providers.dart';
+import '../../providers/leaderboard_providers.dart';
+import '../../providers/scorecard_providers.dart';
 import '../../theme/colors.dart';
 import '../../theme/spacing.dart';
 import '../../widgets/card.dart';
@@ -10,7 +12,8 @@ import '../../widgets/draft_panel.dart';
 import '../../widgets/golfer_table.dart';
 import '../../widgets/responsive_layout.dart';
 import '../../widgets/tournament_header.dart';
-import '../scorecard/scorecard_screen.dart';
+import '../../widgets/team_scorecard.dart';
+import '../../widgets/leaderboard_preview.dart';
 import '../leaderboard/leaderboard_screen.dart';
 import 'available_golfers_screen.dart';
 
@@ -55,6 +58,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final tournamentAsync = ref.watch(activeTournamentProvider);
     final golferListAsync = ref.watch(golferListProvider);
     final userTeamAsync = ref.watch(userTeamProvider);
+    final selectedRound = ref.watch(selectedRoundProvider);
+    final golferScoresAsync = ref.watch(
+      teamGolfersHoleScoresProvider(selectedRound),
+    );
+    final teeTimesAsync = ref.watch(teamGolfersTeeTimesProvider(selectedRound));
 
     // Sync saved team to local draft selection state on first load
     if (!_hasInitializedRoster) {
@@ -77,14 +85,31 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
     final activeTournament = tournamentAsync.value;
     final golfers = golferListAsync.value ?? [];
+    final userTeam = userTeamAsync.value;
+    final isRosterSaved = userTeam != null && userTeam.golferIds.isNotEmpty;
 
-    // Check lock status: tournament is locked only if completed
-    final isLocked = activeTournament?.status == 'COMPLETED';
+    // Roster editing is locked when tournament is completed or lock time has passed
+    final isTeamLocked =
+        activeTournament == null ||
+        activeTournament.status == 'COMPLETED' ||
+        (activeTournament.lockTimeUtc != null &&
+            DateTime.now().toUtc().isAfter(activeTournament.lockTimeUtc!));
+
+    // Watch standings for team score
+    final standingsAsync = ref.watch(leaderboardProvider);
+    int? userTeamScore;
+    if (userTeam != null && standingsAsync.hasValue) {
+      final matches = standingsAsync.value!.where(
+        (s) => s.teamId == userTeam.id,
+      );
+      if (matches.isNotEmpty) {
+        userTeamScore = matches.first.totalToPar;
+      }
+    }
 
     // Check if any golfer on user's SAVED roster is WD pre-lock
-    final userTeam = userTeamAsync.value;
     final showWdBanner =
-        !isLocked &&
+        !isTeamLocked &&
         userTeam != null &&
         golfers.any(
           (g) => userTeam.golferIds.contains(g.id) && g.status == 'WD',
@@ -157,7 +182,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ],
 
               // Lock Info Banner (informational post-lock/during draft)
-              if (activeTournament != null && activeTournament.status != 'COMPLETED') ...[
+              if (activeTournament != null &&
+                  !isTeamLocked &&
+                  activeTournament.status != 'COMPLETED') ...[
                 _buildBanner(
                   text:
                       'Drafting is open! Golfers lock individually 15 minutes prior to their tee times.',
@@ -182,158 +209,80 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
               // Roster Draft Flow (only if there is an active tournament)
               if (activeTournament != null) ...[
-                // Draft Panel
-                DraftPanel(isLocked: isLocked),
-                const SizedBox(height: AppSpacing.md),
-
-                if (userTeam != null) ...[
-                  BbmCard(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const ScorecardScreen(),
-                        ),
-                      );
-                    },
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.analytics_outlined,
-                          color: AppColors.primary,
-                          size: 24,
-                        ),
-                        const SizedBox(width: AppSpacing.md),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'VIEW LIVE SCORECARD',
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                'Track your team\'s hole-by-hole scores in real-time.',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const Icon(
-                          Icons.arrow_forward_ios,
-                          size: 16,
-                          color: AppColors.primary,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                ],
-
-                // Leaderboard card
-                BbmCard(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const LeaderboardScreen(),
-                      ),
-                    );
-                  },
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.leaderboard_outlined,
-                        color: AppColors.primary,
-                        size: 24,
-                      ),
-                      const SizedBox(width: AppSpacing.md),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'VIEW LEADERBOARD',
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              'See overall standings and compare with other teams.',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Icon(
-                        Icons.arrow_forward_ios,
-                        size: 16,
-                        color: AppColors.primary,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-
-                // Golfer Table Preview
-                Text(
-                  'AVAILABLE GOLFERS PREVIEW',
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
-                    letterSpacing: 1.0,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.xs),
                 golferListAsync.when(
-                  data: (list) => Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      GolferTable(golfers: list, isLocked: isLocked, limit: 5),
-                      const SizedBox(height: AppSpacing.md),
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => AvailableGolfersScreen(
-                                golfers: list,
-                                isLocked: isLocked,
-                              ),
+                  data: (golfersList) {
+                    final teamGolfers = golfersList
+                        .where(
+                          (g) => userTeam?.golferIds.contains(g.id) ?? false,
+                        )
+                        .toList();
+                    final golferScores = golferScoresAsync.value ?? [];
+                    final teeTimes = teeTimesAsync.value ?? [];
+                    final activeGolfersCount = teamGolfers.where((g) {
+                      final hasScores = golferScores.any(
+                        (s) => s.tournamentGolferId == g.id,
+                      );
+                      if (hasScores) return true;
+
+                      final golferTeeTimeMatches = teeTimes.where(
+                        (t) => t.tournamentGolferId == g.id,
+                      );
+                      if (golferTeeTimeMatches.isNotEmpty) {
+                        final teeTime = golferTeeTimeMatches.first;
+                        if (teeTime.status == 'WD' || teeTime.status == 'MC') {
+                          return false;
+                        }
+                        return DateTime.now().toUtc().isAfter(
+                          teeTime.teeTimeUtc,
+                        );
+                      }
+                      return false;
+                    }).length;
+
+                    if (isTeamLocked) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _buildStatsArea(
+                            theme,
+                            activeGolfersCount,
+                            userTeamScore,
+                          ),
+                          const SizedBox(height: AppSpacing.md),
+                          const TeamScorecard(
+                            shrinkWrap: true,
+                            physics: NeverScrollableScrollPhysics(),
+                            showHeader: false,
+                            showBanners: false,
+                          ),
+                          const SizedBox(height: AppSpacing.md),
+                          const LeaderboardPreview(showButton: false),
+                          const SizedBox(height: AppSpacing.md),
+                          _buildLeaderboardCard(context, theme),
+                          const SizedBox(height: AppSpacing.md),
+                        ],
+                      );
+                    } else {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          DraftPanel(isLocked: isTeamLocked),
+                          const SizedBox(height: AppSpacing.md),
+                          if (!isRosterSaved) ...[
+                            _buildAvailableGolfersPreview(
+                              theme,
+                              golfersList,
+                              isTeamLocked,
                             ),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            vertical: AppSpacing.md,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: AppSpacing.borderRadiusLg,
-                          ),
-                        ),
-                        child: const Text(
-                          'SEE ALL AVAILABLE GOLFERS',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                            letterSpacing: 1.0,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                            const SizedBox(height: AppSpacing.lg),
+                          ] else ...[
+                            const LeaderboardPreview(),
+                            const SizedBox(height: AppSpacing.lg),
+                          ],
+                        ],
+                      );
+                    }
+                  },
                   loading: () => const Center(
                     child: Padding(
                       padding: EdgeInsets.all(AppSpacing.xl),
@@ -348,7 +297,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     child: Text('Error loading golfers: $err'),
                   ),
                 ),
-                const SizedBox(height: AppSpacing.lg),
               ],
 
               // Team Info Details
@@ -445,6 +393,199 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  String _formatScoreToPar(int? score) {
+    if (score == null) return '-';
+    if (score == 0) return 'E';
+    if (score > 0) return '+$score';
+    return '$score';
+  }
+
+  Widget _buildStatsArea(ThemeData theme, int activeGolfers, int? teamScore) {
+    return Row(
+      children: [
+        Expanded(
+          child: BbmCard(
+            child: Column(
+              children: [
+                const Icon(
+                  Icons.sports_golf_outlined,
+                  color: AppColors.primary,
+                  size: 28,
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  '$activeGolfers / 4',
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                Text(
+                  'ACTIVE GOLFERS',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: BbmCard(
+            child: Column(
+              children: [
+                Icon(
+                  teamScore == null
+                      ? Icons.trending_flat
+                      : (teamScore < 0
+                            ? Icons.trending_down
+                            : (teamScore > 0
+                                  ? Icons.trending_up
+                                  : Icons.trending_flat)),
+                  color: teamScore == null
+                      ? AppColors.textSecondary
+                      : (teamScore < 0
+                            ? AppColors.accent
+                            : (teamScore > 0
+                                  ? AppColors.scoreBogeyBg
+                                  : AppColors.textSecondary)),
+                  size: 28,
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  _formatScoreToPar(teamScore),
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w900,
+                    color: teamScore == null
+                        ? AppColors.textPrimary
+                        : (teamScore < 0
+                              ? AppColors.accent
+                              : (teamScore > 0
+                                    ? AppColors.scoreBogeyBg
+                                    : AppColors.textPrimary)),
+                  ),
+                ),
+                Text(
+                  'TEAM SCORE',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLeaderboardCard(BuildContext context, ThemeData theme) {
+    return BbmCard(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const LeaderboardScreen()),
+        );
+      },
+      child: Row(
+        children: [
+          const Icon(
+            Icons.leaderboard_outlined,
+            color: AppColors.primary,
+            size: 24,
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'VIEW LEADERBOARD',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'See overall standings and compare with other teams.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Icon(
+            Icons.arrow_forward_ios,
+            size: 16,
+            color: AppColors.primary,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAvailableGolfersPreview(
+    ThemeData theme,
+    List<TournamentGolfer> golfers,
+    bool isLocked,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'AVAILABLE GOLFERS PREVIEW',
+          style: theme.textTheme.labelLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: AppColors.primary,
+            letterSpacing: 1.0,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            GolferTable(golfers: golfers, isLocked: isLocked, limit: 5),
+            const SizedBox(height: AppSpacing.md),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AvailableGolfersScreen(
+                      golfers: golfers,
+                      isLocked: isLocked,
+                    ),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                shape: RoundedRectangleBorder(
+                  borderRadius: AppSpacing.borderRadiusLg,
+                ),
+              ),
+              child: const Text(
+                'SEE ALL AVAILABLE GOLFERS',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                  letterSpacing: 1.0,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
