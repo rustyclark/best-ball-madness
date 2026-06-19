@@ -4,6 +4,7 @@ import '../providers/draft_providers.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../utils/score_utils.dart';
+import '../screens/dashboard/available_golfers_screen.dart';
 import 'badge.dart';
 import 'button.dart';
 import 'card.dart';
@@ -55,6 +56,8 @@ class _DraftPanelState extends ConsumerState<DraftPanel> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final selectedGolfers = ref.watch(draftStateNotifierProvider);
+    final userTeam = ref.watch(userTeamProvider).value;
+    final isRosterSaved = userTeam != null && userTeam.golferIds.isNotEmpty;
 
     final double totalSpend = selectedGolfers.fold<double>(
       0,
@@ -182,19 +185,50 @@ class _DraftPanelState extends ConsumerState<DraftPanel> {
                       ),
                     ),
                     if (!isGolferLocked)
-                      IconButton(
-                        icon: const Icon(
-                          Icons.remove_circle_outline,
-                          color: AppColors.scoreBogeyBg,
-                          size: 20,
-                        ),
-                        onPressed: () {
-                          ref
-                              .read(draftStateNotifierProvider.notifier)
-                              .removeGolfer(golfer);
-                        },
-                        tooltip: 'Remove',
-                      )
+                      isRosterSaved
+                          ? TextButton.icon(
+                              icon: const Icon(
+                                Icons.edit_outlined,
+                                color: AppColors.primary,
+                                size: 16,
+                              ),
+                              label: const Text(
+                                'EDIT',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                              onPressed: () {
+                                ref
+                                    .read(draftStateNotifierProvider.notifier)
+                                    .removeGolfer(golfer);
+                                final golfers = ref.read(golferListProvider).value ?? [];
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => AvailableGolfersScreen(
+                                      golfers: golfers,
+                                      isLocked: widget.isLocked,
+                                    ),
+                                  ),
+                                );
+                              },
+                            )
+                          : IconButton(
+                              icon: const Icon(
+                                Icons.remove_circle_outline,
+                                color: AppColors.scoreBogeyBg,
+                                size: 20,
+                              ),
+                              onPressed: () {
+                                ref
+                                    .read(draftStateNotifierProvider.notifier)
+                                    .removeGolfer(golfer);
+                              },
+                              tooltip: 'Remove',
+                            )
                     else
                       const Padding(
                         padding: EdgeInsets.symmetric(horizontal: 12.0),
@@ -210,9 +244,9 @@ class _DraftPanelState extends ConsumerState<DraftPanel> {
             } else {
               return Container(
                 margin: const EdgeInsets.only(bottom: AppSpacing.xs),
-                padding: const EdgeInsets.symmetric(
+                padding: EdgeInsets.symmetric(
                   horizontal: AppSpacing.sm,
-                  vertical: AppSpacing.md,
+                  vertical: isRosterSaved ? AppSpacing.xs : AppSpacing.md,
                 ),
                 decoration: BoxDecoration(
                   color: AppColors.background.withValues(alpha: 0.5),
@@ -237,6 +271,36 @@ class _DraftPanelState extends ConsumerState<DraftPanel> {
                         fontStyle: FontStyle.italic,
                       ),
                     ),
+                    if (isRosterSaved) ...[
+                      const Spacer(),
+                      TextButton.icon(
+                        icon: const Icon(
+                          Icons.add,
+                          color: AppColors.primary,
+                          size: 16,
+                        ),
+                        label: const Text(
+                          'ADD',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                        onPressed: () {
+                          final golfers = ref.read(golferListProvider).value ?? [];
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => AvailableGolfersScreen(
+                                golfers: golfers,
+                                isLocked: widget.isLocked,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ],
                 ),
               );

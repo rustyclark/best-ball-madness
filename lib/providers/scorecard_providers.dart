@@ -274,10 +274,24 @@ final currentRoundProvider = Provider.autoDispose<int>((ref) {
 
 /// Notifier managing the selected round tab.
 class SelectedRoundNotifier extends Notifier<int> {
+  int? _manuallySelectedRound;
+  String? _lastTournamentId;
+
   @override
   int build() {
     final current = ref.watch(currentRoundProvider);
     final userTeam = ref.watch(userTeamProvider).value;
+    final tournament = ref.watch(activeTournamentProvider).value;
+
+    if (tournament != null && tournament.id != _lastTournamentId) {
+      _lastTournamentId = tournament.id;
+      _manuallySelectedRound = null;
+    }
+
+    if (_manuallySelectedRound != null) {
+      return _manuallySelectedRound!;
+    }
+
     if (userTeam != null && userTeam.status == 'CUT' && current >= 2) {
       return 2;
     }
@@ -285,11 +299,13 @@ class SelectedRoundNotifier extends Notifier<int> {
   }
 
   void setRound(int round) {
+    _manuallySelectedRound = round;
     state = round;
   }
 }
 
 /// Manages the selected round tab in the scorecard UI.
-final selectedRoundProvider = NotifierProvider<SelectedRoundNotifier, int>(() {
-  return SelectedRoundNotifier();
-});
+final selectedRoundProvider =
+    NotifierProvider.autoDispose<SelectedRoundNotifier, int>(() {
+      return SelectedRoundNotifier();
+    });
