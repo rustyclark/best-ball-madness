@@ -12,6 +12,7 @@ import 'package:best_ball_madness/screens/dashboard/dashboard_screen.dart';
 import 'package:best_ball_madness/widgets/button.dart';
 import 'package:best_ball_madness/widgets/draft_panel.dart';
 import 'package:best_ball_madness/widgets/golfer_table.dart';
+import 'package:best_ball_madness/widgets/team_scorecard.dart';
 import 'helpers/fake_supabase.dart';
 
 void main() {
@@ -377,18 +378,11 @@ void main() {
       // Screen should directly load Dashboard Screen
       expect(find.byType(DashboardScreen), findsOneWidget);
 
-      // Verify that DraftPanel shows "ROSTER LOCKED" instead of "Save Team"
-      expect(find.text('ROSTER LOCKED'), findsOneWidget);
-      expect(find.widgetWithText(BbmButton, 'Save Team'), findsNothing);
-
-      // Verify that GolferTable has no active add buttons
-      expect(
-        find.descendant(
-          of: find.byType(GolferTable),
-          matching: find.byIcon(Icons.add_circle_outline),
-        ),
-        findsNothing,
-      );
+      // Verify that TeamScorecard is visible instead of DraftPanel
+      expect(find.byType(TeamScorecard), findsOneWidget);
+      expect(find.byType(DraftPanel), findsNothing);
+      expect(find.text('ACTIVE GOLFERS'), findsOneWidget);
+      expect(find.text('TEAM SCORE'), findsOneWidget);
     });
   });
 }

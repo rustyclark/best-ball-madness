@@ -4,11 +4,12 @@ SELECT cron.schedule(
   '0 5 * * 2', -- 05:00 AM on Tuesday
   $$
   SELECT net.http_post(
-    url := 'http://api.supabase.internal/project/functions/v1/ingest-tournament-field',
+    url := COALESCE((SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'supabase_url' LIMIT 1), 'http://api.supabase.internal/project') || '/functions/v1/ingest-tournament-field',
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
       'Authorization', (SELECT 'Bearer ' || decrypted_secret FROM vault.decrypted_secrets WHERE name = 'service_role_key' LIMIT 1)
-    )
+    ),
+    timeout_milliseconds := 60000
   );
   $$
 );
@@ -19,11 +20,12 @@ SELECT cron.schedule(
   '0 22 * * 3', -- 10:00 PM on Wednesday
   $$
   SELECT net.http_post(
-    url := 'http://api.supabase.internal/project/functions/v1/run-pricing-algorithm',
+    url := COALESCE((SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'supabase_url' LIMIT 1), 'http://api.supabase.internal/project') || '/functions/v1/run-pricing-algorithm',
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
       'Authorization', (SELECT 'Bearer ' || decrypted_secret FROM vault.decrypted_secrets WHERE name = 'service_role_key' LIMIT 1)
-    )
+    ),
+    timeout_milliseconds := 60000
   );
   $$
 );

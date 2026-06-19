@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:best_ball_madness/providers/auth_providers.dart';
 import 'package:best_ball_madness/providers/draft_providers.dart';
+import 'package:best_ball_madness/providers/scorecard_providers.dart';
 import 'package:best_ball_madness/screens/scorecard/scorecard_screen.dart';
 import 'package:best_ball_madness/utils/score_utils.dart';
 import 'package:best_ball_madness/theme/colors.dart';
@@ -380,5 +381,31 @@ void main() {
       // Score should now be updated to '2'
       expect(find.text('2'), findsAtLeast(1));
     });
+
+    test(
+      'SelectedRoundNotifier preserves manual round selection when dependencies update',
+      () {
+        final container = ProviderContainer(
+          overrides: [
+            activeTournamentProvider.overrideWith((ref) => mockTournament),
+            userTeamProvider.overrideWith((ref) => mockTeam),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        // Read selected round provider, should be 2 (active tournament currentRound is 2)
+        expect(container.read(selectedRoundProvider), 2);
+
+        // Manually set to round 1
+        container.read(selectedRoundProvider.notifier).setRound(1);
+        expect(container.read(selectedRoundProvider), 1);
+
+        // Invalidate userTeamProvider dependency to trigger rebuild
+        container.invalidate(userTeamProvider);
+
+        // Read again, should still be 1 (not reset back to 2)
+        expect(container.read(selectedRoundProvider), 1);
+      },
+    );
   });
 }

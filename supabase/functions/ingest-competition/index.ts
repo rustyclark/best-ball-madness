@@ -48,6 +48,9 @@ serve(async (req) => {
       .from('tournament_golfers')
       .select(`
         id,
+        price,
+        tournament_id,
+        golfer_profile_id,
         golfer_profiles (
           espn_id
         )
@@ -58,11 +61,16 @@ serve(async (req) => {
       throw new Error(`Failed to fetch tournament golfers: ${tgError?.message}`)
     }
 
-    const tgMap = new Map<string, string>() // espn_id -> tournament_golfer_id
+    const tgMap = new Map<string, { id: string, price: number, tournament_id: string, golfer_profile_id: string }>() // espn_id -> tg details
     for (const tg of tgGolfers) {
       const espnId = (tg.golfer_profiles as any)?.espn_id
       if (espnId) {
-        tgMap.set(espnId, tg.id)
+        tgMap.set(espnId, {
+          id: tg.id,
+          price: tg.price,
+          tournament_id: tg.tournament_id,
+          golfer_profile_id: tg.golfer_profile_id,
+        })
       }
     }
 
@@ -88,73 +96,124 @@ serve(async (req) => {
     const competitors = event.competitions?.[0]?.competitors || []
     let processedCount = 0
 
-    for (const competitor of competitors) {
-      const espnId = competitor.id
-      const tgId = tgMap.get(espnId)
-      if (!tgId) continue // golfer not in active tournament field
+    const tgUpserts: any[] = []
+    const teeTimeUpserts: any[] = []
+    const holeScoreUpserts: any[] = []
 
-      // Map competitor status
-      const stateName = competitor.status?.type?.name ?? ""
-      const tgStatus = stateName === "STATUS_CUT" ? "MC" : 
-                       stateName === "STATUS_WITHDRAWN" ? "WD" : "ACTIVE"
+    // Fetch player linescores in parallel batches (e.g., 15 at a time) to prevent worker limits and rate limits
+    const batchSize = 15
+    for (let i = 0; i < competitors.length; i += batchSize) {
+      const batch = competitors.slice(i, i + batchSize)
+      await Promise.all(
+        batch.map(async (competitor: any) => {
+          const espnId = competitor.id
+          const tg = tgMap.get(espnId)
+          if (!tg) return // golfer not in active tournament field
 
-      // Update tournament golfer status
-      await supabaseClient
-        .from('tournament_golfers')
-        .update({ status: tgStatus })
-        .eq('id', tgId)
+          // Map competitor status
+          const stateName = competitor.status?.type?.name ?? ""
+          const tgStatus = stateName === "STATUS_CUT" ? "MC" : 
+                           stateName === "STATUS_WITHDRAWN" ? "WD" : "ACTIVE"
 
-      // Fetch player's detailed linescores (includes hole-by-hole data)
-      const linescoresRes = await fetch(
-        `https://sports.core.api.espn.com/v2/sports/golf/leagues/pga/events/${espnEventId}/competitions/${espnEventId}/competitors/${espnId}/linescores`
-      )
-      if (!linescoresRes.ok) {
-        console.error(`Failed to fetch linescores for golfer ${espnId}: ${linescoresRes.statusText}`)
-        continue
-      }
-      const linescoresData = await linescoresRes.json()
+          tgUpserts.push({
+            id: tg.id,
+            tournament_id: tg.tournament_id,
+            golfer_profile_id: tg.golfer_profile_id,
+            price: tg.price,
+            status: tgStatus,
+          })
 
-      // Iterate through rounds (items represent rounds)
-      for (const roundItem of linescoresData.items || []) {
-        const roundNum = roundItem.period // 1, 2, 3, 4
-        const roundTeeTime = roundItem.teeTime // "2026-06-11T16:59Z"
-
-        // Upsert tee time
-        if (roundTeeTime) {
-          const startTee = competitor.status?.startHole ?? 1
-          await supabaseClient
-            .from('tee_times')
-            .upsert({
-              tournament_golfer_id: tgId,
-              round: roundNum,
-              tee_time_utc: roundTeeTime,
-              start_tee: startTee,
-              status: tgStatus,
-            }, { onConflict: 'tournament_golfer_id,round' })
-        }
-
-        // Upsert hole scores
-        for (const holeItem of roundItem.linescores || []) {
-          const holeNum = holeItem.period // 1 to 18
-          const score = holeItem.value // raw strokes (e.g. 4.0)
-          const par = holeItem.par // e.g. 5
-          const scoreTypeName = holeItem.scoreType?.name ?? "PAR"
-
-          if (score !== undefined && score !== null) {
-            await supabaseClient
-              .from('hole_scores')
-              .upsert({
-                tournament_golfer_id: tgId,
-                round: roundNum,
-                hole: holeNum,
-                par,
-                score: Math.round(score),
-                score_type: scoreTypeName,
-              }, { onConflict: 'tournament_golfer_id,round,hole' })
+          // Fetch player's detailed linescores (includes hole-by-hole data)
+          const linescoresRes = await fetch(
+            `https://sports.core.api.espn.com/v2/sports/golf/leagues/pga/events/${espnEventId}/competitions/${espnEventId}/competitors/${espnId}/linescores`
+          )
+          if (!linescoresRes.ok) {
+            console.error(`Failed to fetch linescores for golfer ${espnId}: ${linescoresRes.statusText}`)
+            return
           }
-        }
+          const linescoresData = await linescoresRes.json()
+
+          // Iterate through rounds
+          for (const roundItem of linescoresData.items || []) {
+            const roundNum = roundItem.period // 1, 2, 3, 4
+            const roundTeeTime = roundItem.teeTime // "2026-06-11T16:59Z"
+
+            // Collect tee time
+            if (roundTeeTime) {
+              const startTee = competitor.status?.startHole ?? 1
+              teeTimeUpserts.push({
+                tournament_golfer_id: tg.id,
+                round: roundNum,
+                tee_time_utc: roundTeeTime,
+                start_tee: startTee,
+                status: tgStatus,
+              })
+            }
+
+            // Collect hole scores
+            for (const holeItem of roundItem.linescores || []) {
+              const holeNum = holeItem.period // 1 to 18
+              const score = holeItem.value // raw strokes
+              const par = holeItem.par
+              const scoreTypeName = holeItem.scoreType?.name ?? "PAR"
+
+              if (score !== undefined && score !== null) {
+                holeScoreUpserts.push({
+                  tournament_golfer_id: tg.id,
+                  round: roundNum,
+                  hole: holeNum,
+                  par,
+                  score: Math.round(score),
+                  score_type: scoreTypeName,
+                })
+              }
+            }
+          }
+          processedCount++
+        })
+      )
+    }
+
+    // Helper function to chunk arrays for batch upsert
+    const chunkArray = <T>(array: T[], size: number): T[][] => {
+      const chunked: T[][] = []
+      for (let i = 0; i < array.length; i += size) {
+        chunked.push(array.slice(i, i + size))
       }
-      processedCount++
+      return chunked
+    }
+
+    // Bulk upsert tournament_golfers status
+    const tgChunks = chunkArray(tgUpserts, 1000)
+    for (const chunk of tgChunks) {
+      const { error: tgUpsertError } = await supabaseClient
+        .from('tournament_golfers')
+        .upsert(chunk, { onConflict: 'id' })
+      if (tgUpsertError) {
+        throw new Error(`Failed to upsert tournament golfers: ${tgUpsertError.message}`)
+      }
+    }
+
+    // Bulk upsert tee_times
+    const teeTimeChunks = chunkArray(teeTimeUpserts, 1000)
+    for (const chunk of teeTimeChunks) {
+      const { error: teeTimeError } = await supabaseClient
+        .from('tee_times')
+        .upsert(chunk, { onConflict: 'tournament_golfer_id,round' })
+      if (teeTimeError) {
+        throw new Error(`Failed to upsert tee times: ${teeTimeError.message}`)
+      }
+    }
+
+    // Bulk upsert hole_scores
+    const holeScoreChunks = chunkArray(holeScoreUpserts, 1000)
+    for (const chunk of holeScoreChunks) {
+      const { error: holeScoreError } = await supabaseClient
+        .from('hole_scores')
+        .upsert(chunk, { onConflict: 'tournament_golfer_id,round,hole' })
+      if (holeScoreError) {
+        throw new Error(`Failed to upsert hole scores: ${holeScoreError.message}`)
+      }
     }
 
     // 6. Lock Time Auto-Computation (Round 1 earliest tee time - 15 minutes)
