@@ -282,7 +282,6 @@ class SelectedRoundNotifier extends Notifier<int> {
     final current = ref.watch(currentRoundProvider);
     final tournament = ref.watch(activeTournamentProvider).value;
 
-
     if (tournament != null && tournament.id != _lastTournamentId) {
       _lastTournamentId = tournament.id;
       _manuallySelectedRound = null;

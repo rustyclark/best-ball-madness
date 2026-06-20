@@ -291,37 +291,38 @@ void main() {
       );
     });
 
-    testWidgets('Scorecard defaults to current round (R3) on load even if team status is CUT', (
-      WidgetTester tester,
-    ) async {
-      mockTournament = Tournament(
-        id: 't-1',
-        espnEventId: 'espn-1',
-        name: 'The Masters',
-        course: 'Augusta National',
-        location: 'Augusta, GA',
-        par: 72,
-        yards: 7400,
-        startDate: DateTime.now().subtract(const Duration(days: 1)),
-        endDate: DateTime.now().add(const Duration(days: 2)),
-        status: 'IN_PROGRESS',
-        currentRound: 3, // Round 3!
-      );
+    testWidgets(
+      'Scorecard defaults to current round (R3) on load even if team status is CUT',
+      (WidgetTester tester) async {
+        mockTournament = Tournament(
+          id: 't-1',
+          espnEventId: 'espn-1',
+          name: 'The Masters',
+          course: 'Augusta National',
+          location: 'Augusta, GA',
+          par: 72,
+          yards: 7400,
+          startDate: DateTime.now().subtract(const Duration(days: 1)),
+          endDate: DateTime.now().add(const Duration(days: 2)),
+          status: 'IN_PROGRESS',
+          currentRound: 3, // Round 3!
+        );
 
-      mockTeam = UserTeam(
-        id: 'team-1',
-        userId: 'user-1',
-        tournamentId: 't-1',
-        status: 'CUT', // CUT status!
-        golferIds: ['tg-1', 'tg-2', 'tg-3', 'tg-4'],
-      );
+        mockTeam = UserTeam(
+          id: 'team-1',
+          userId: 'user-1',
+          tournamentId: 't-1',
+          status: 'CUT', // CUT status!
+          golferIds: ['tg-1', 'tg-2', 'tg-3', 'tg-4'],
+        );
 
-      await tester.pumpWidget(createScorecardWidget());
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(createScorecardWidget());
+        await tester.pumpAndSettle();
 
-      // Should default to Round 3 scorecard instead of Round 2 scorecard
-      expect(find.text('ROUND 3 SCORECARD'), findsOneWidget);
-    });
+        // Should default to Round 3 scorecard instead of Round 2 scorecard
+        expect(find.text('ROUND 3 SCORECARD'), findsOneWidget);
+      },
+    );
 
     testWidgets('DQ banner is visible when team status is DQ', (
       WidgetTester tester,

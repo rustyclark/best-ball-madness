@@ -119,8 +119,12 @@ class _DraftPanelState extends ConsumerState<DraftPanel> {
           ...List.generate(4, (index) {
             if (index < selectedGolfers.length) {
               final golfer = selectedGolfers[index];
-              final isGolferLocked = widget.isLocked || (golfer.teeTime != null &&
-                  DateTime.now().toUtc().isAfter(golfer.teeTime!.subtract(const Duration(minutes: 15))));
+              final isGolferLocked =
+                  widget.isLocked ||
+                  (golfer.teeTime != null &&
+                      DateTime.now().toUtc().isAfter(
+                        golfer.teeTime!.subtract(const Duration(minutes: 15)),
+                      ));
 
               return Container(
                 margin: const EdgeInsets.only(bottom: AppSpacing.xs),
@@ -204,14 +208,16 @@ class _DraftPanelState extends ConsumerState<DraftPanel> {
                                 ref
                                     .read(draftStateNotifierProvider.notifier)
                                     .removeGolfer(golfer);
-                                final golfers = ref.read(golferListProvider).value ?? [];
+                                final golfers =
+                                    ref.read(golferListProvider).value ?? [];
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => AvailableGolfersScreen(
-                                      golfers: golfers,
-                                      isLocked: widget.isLocked,
-                                    ),
+                                    builder: (context) =>
+                                        AvailableGolfersScreen(
+                                          golfers: golfers,
+                                          isLocked: widget.isLocked,
+                                        ),
                                   ),
                                 );
                               },
@@ -288,7 +294,8 @@ class _DraftPanelState extends ConsumerState<DraftPanel> {
                           ),
                         ),
                         onPressed: () {
-                          final golfers = ref.read(golferListProvider).value ?? [];
+                          final golfers =
+                              ref.read(golferListProvider).value ?? [];
                           Navigator.push(
                             context,
                             MaterialPageRoute(

@@ -196,8 +196,12 @@ final saveTeamAction = Provider<Future<void> Function(List<TournamentGolfer>)>((
       final currentGolferIds = existingTeam.golferIds;
       final newGolferIds = selectedGolfers.map((g) => g.id).toList();
 
-      final toRemove = currentGolferIds.where((id) => !newGolferIds.contains(id)).toList();
-      final toAdd = newGolferIds.where((id) => !currentGolferIds.contains(id)).toList();
+      final toRemove = currentGolferIds
+          .where((id) => !newGolferIds.contains(id))
+          .toList();
+      final toAdd = newGolferIds
+          .where((id) => !currentGolferIds.contains(id))
+          .toList();
 
       if (toRemove.isNotEmpty) {
         await client

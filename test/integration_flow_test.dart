@@ -340,9 +340,7 @@ void main() {
         endDate: DateTime.now().subtract(const Duration(days: 1)),
         status: 'COMPLETED',
         currentRound: 4,
-        lockTimeUtc: DateTime.now()
-            .subtract(const Duration(days: 4))
-            .toUtc(),
+        lockTimeUtc: DateTime.now().subtract(const Duration(days: 4)).toUtc(),
       );
 
       // Set user profile as already created
@@ -401,7 +399,9 @@ void main() {
           endDate: DateTime.now().add(const Duration(days: 1)),
           status: 'IN_PROGRESS',
           currentRound: 3,
-          lockTimeUtc: DateTime.now().subtract(const Duration(hours: 5)).toUtc(), // Locked
+          lockTimeUtc: DateTime.now()
+              .subtract(const Duration(hours: 5))
+              .toUtc(), // Locked
         );
 
         // 2 golfers missed the cut (status MC)
@@ -413,7 +413,11 @@ void main() {
             golferProfileId: 'gp-1',
             price: 25.0,
             status: 'MC', // Missed Cut
-            profile: GolferProfile(id: 'gp-1', espnId: '1', name: 'Scottie Scheffler'),
+            profile: GolferProfile(
+              id: 'gp-1',
+              espnId: '1',
+              name: 'Scottie Scheffler',
+            ),
           ),
           TournamentGolfer(
             id: 'tg-2',
@@ -421,7 +425,11 @@ void main() {
             golferProfileId: 'gp-2',
             price: 24.0,
             status: 'MC', // Missed Cut
-            profile: GolferProfile(id: 'gp-2', espnId: '2', name: 'Rory McIlroy'),
+            profile: GolferProfile(
+              id: 'gp-2',
+              espnId: '2',
+              name: 'Rory McIlroy',
+            ),
           ),
           TournamentGolfer(
             id: 'tg-3',
@@ -437,7 +445,11 @@ void main() {
             golferProfileId: 'gp-4',
             price: 22.0,
             status: 'ACTIVE',
-            profile: GolferProfile(id: 'gp-4', espnId: '4', name: 'Cameron Young'),
+            profile: GolferProfile(
+              id: 'gp-4',
+              espnId: '4',
+              name: 'Cameron Young',
+            ),
           ),
         ];
 
@@ -475,7 +487,10 @@ void main() {
             'id': 'tt-1',
             'tournament_golfer_id': 'tg-1',
             'round': 3,
-            'tee_time_utc': DateTime.now().subtract(const Duration(hours: 1)).toUtc().toIso8601String(),
+            'tee_time_utc': DateTime.now()
+                .subtract(const Duration(hours: 1))
+                .toUtc()
+                .toIso8601String(),
             'start_tee': 1,
             'status': 'MC',
           },
@@ -483,7 +498,10 @@ void main() {
             'id': 'tt-2',
             'tournament_golfer_id': 'tg-2',
             'round': 3,
-            'tee_time_utc': DateTime.now().subtract(const Duration(hours: 1)).toUtc().toIso8601String(),
+            'tee_time_utc': DateTime.now()
+                .subtract(const Duration(hours: 1))
+                .toUtc()
+                .toIso8601String(),
             'start_tee': 1,
             'status': 'MC',
           },
@@ -491,7 +509,10 @@ void main() {
             'id': 'tt-3',
             'tournament_golfer_id': 'tg-3',
             'round': 3,
-            'tee_time_utc': DateTime.now().subtract(const Duration(hours: 1)).toUtc().toIso8601String(),
+            'tee_time_utc': DateTime.now()
+                .subtract(const Duration(hours: 1))
+                .toUtc()
+                .toIso8601String(),
             'start_tee': 1,
             'status': 'ACTIVE',
           },
@@ -499,7 +520,10 @@ void main() {
             'id': 'tt-4',
             'tournament_golfer_id': 'tg-4',
             'round': 3,
-            'tee_time_utc': DateTime.now().add(const Duration(hours: 1)).toUtc().toIso8601String(), // In the future
+            'tee_time_utc': DateTime.now()
+                .add(const Duration(hours: 1))
+                .toUtc()
+                .toIso8601String(), // In the future
             'start_tee': 1,
             'status': 'ACTIVE',
           },
@@ -557,7 +581,10 @@ void main() {
             'id': 'tt-2-1',
             'tournament_golfer_id': 'tg-1',
             'round': 2,
-            'tee_time_utc': DateTime.now().subtract(const Duration(hours: 1)).toUtc().toIso8601String(),
+            'tee_time_utc': DateTime.now()
+                .subtract(const Duration(hours: 1))
+                .toUtc()
+                .toIso8601String(),
             'start_tee': 1,
             'status': 'ACTIVE',
           },
@@ -565,7 +592,10 @@ void main() {
             'id': 'tt-2-2',
             'tournament_golfer_id': 'tg-2',
             'round': 2,
-            'tee_time_utc': DateTime.now().add(const Duration(hours: 1)).toUtc().toIso8601String(),
+            'tee_time_utc': DateTime.now()
+                .add(const Duration(hours: 1))
+                .toUtc()
+                .toIso8601String(),
             'start_tee': 1,
             'status': 'ACTIVE',
           },
@@ -573,7 +603,10 @@ void main() {
             'id': 'tt-2-3',
             'tournament_golfer_id': 'tg-3',
             'round': 2,
-            'tee_time_utc': DateTime.now().add(const Duration(hours: 1)).toUtc().toIso8601String(),
+            'tee_time_utc': DateTime.now()
+                .add(const Duration(hours: 1))
+                .toUtc()
+                .toIso8601String(),
             'start_tee': 1,
             'status': 'ACTIVE',
           },
@@ -581,7 +614,10 @@ void main() {
             'id': 'tt-2-4',
             'tournament_golfer_id': 'tg-4',
             'round': 2,
-            'tee_time_utc': DateTime.now().add(const Duration(hours: 1)).toUtc().toIso8601String(),
+            'tee_time_utc': DateTime.now()
+                .add(const Duration(hours: 1))
+                .toUtc()
+                .toIso8601String(),
             'start_tee': 1,
             'status': 'ACTIVE',
           },

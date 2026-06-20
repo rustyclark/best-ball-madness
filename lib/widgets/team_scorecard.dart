@@ -401,16 +401,25 @@ class _TeamScorecardState extends ConsumerState<TeamScorecard> {
                                               )
                                               .toList();
                                           final golferTeeTimes = teeTimes
-                                              .where((t) => t.tournamentGolferId == golfer.id)
+                                              .where(
+                                                (t) =>
+                                                    t.tournamentGolferId ==
+                                                    golfer.id,
+                                              )
                                               .toList();
-                                          final golferTeeTime = golferTeeTimes.isNotEmpty
+                                          final golferTeeTime =
+                                              golferTeeTimes.isNotEmpty
                                               ? golferTeeTimes.first
                                               : null;
-                                           final isInactive = golfer.status == 'WD' ||
-                                               (golfer.status == 'MC' && selectedRound >= 3) ||
-                                               (golferTeeTime != null &&
-                                                   (golferTeeTime.status == 'MC' ||
-                                                       golferTeeTime.status == 'WD'));
+                                          final isInactive =
+                                              golfer.status == 'WD' ||
+                                              (golfer.status == 'MC' &&
+                                                  selectedRound >= 3) ||
+                                              (golferTeeTime != null &&
+                                                  (golferTeeTime.status ==
+                                                          'MC' ||
+                                                      golferTeeTime.status ==
+                                                          'WD'));
 
                                           return _buildLeftGolferRow(
                                             golfer: golfer,
@@ -517,16 +526,26 @@ class _TeamScorecardState extends ConsumerState<TeamScorecard> {
                                                     )
                                                     .toList();
                                                 final golferTeeTimes = teeTimes
-                                                    .where((t) => t.tournamentGolferId == golfer.id)
+                                                    .where(
+                                                      (t) =>
+                                                          t.tournamentGolferId ==
+                                                          golfer.id,
+                                                    )
                                                     .toList();
-                                                final golferTeeTime = golferTeeTimes.isNotEmpty
+                                                final golferTeeTime =
+                                                    golferTeeTimes.isNotEmpty
                                                     ? golferTeeTimes.first
                                                     : null;
-                                                final isInactive = golfer.status == 'WD' ||
-                                                    (golfer.status == 'MC' && selectedRound >= 3) ||
+                                                final isInactive =
+                                                    golfer.status == 'WD' ||
+                                                    (golfer.status == 'MC' &&
+                                                        selectedRound >= 3) ||
                                                     (golferTeeTime != null &&
-                                                        (golferTeeTime.status == 'MC' ||
-                                                            golferTeeTime.status == 'WD'));
+                                                        (golferTeeTime.status ==
+                                                                'MC' ||
+                                                            golferTeeTime
+                                                                    .status ==
+                                                                'WD'));
 
                                                 return _buildRightGolferRow(
                                                   golfer: golfer,

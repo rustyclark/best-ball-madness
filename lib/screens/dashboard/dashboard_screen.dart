@@ -223,9 +223,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         return false;
                       }
                       if (g.status == 'WD') {
-                        final matches = teeTimes
-                            .where((t) => t.tournamentGolferId == g.id);
-                        final teeTime = matches.isNotEmpty ? matches.first : null;
+                        final matches = teeTimes.where(
+                          (t) => t.tournamentGolferId == g.id,
+                        );
+                        final teeTime = matches.isNotEmpty
+                            ? matches.first
+                            : null;
                         if (teeTime != null && teeTime.status == 'WD') {
                           return false;
                         }
