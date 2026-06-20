@@ -218,7 +218,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         .toList();
                     final golferScores = golferScoresAsync.value ?? [];
                     final teeTimes = teeTimesAsync.value ?? [];
-                    final activeGolfersCount = teamGolfers.where((g) {
+                    final remainingGolfers = teamGolfers
+                        .where((g) => g.status != 'MC' && g.status != 'WD')
+                        .toList();
+                    final remainingGolfersCount = remainingGolfers.length;
+
+                    final activeGolfersCount = remainingGolfers.where((g) {
                       final hasScores = golferScores.any(
                         (s) => s.tournamentGolferId == g.id,
                       );
@@ -246,6 +251,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           _buildStatsArea(
                             theme,
                             activeGolfersCount,
+                            remainingGolfersCount,
                             userTeamScore,
                           ),
                           const SizedBox(height: AppSpacing.md),
@@ -403,7 +409,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     return '$score';
   }
 
-  Widget _buildStatsArea(ThemeData theme, int activeGolfers, int? teamScore) {
+  Widget _buildStatsArea(
+    ThemeData theme,
+    int activeGolfers,
+    int remainingGolfers,
+    int? teamScore,
+  ) {
     return Row(
       children: [
         Expanded(
@@ -417,7 +428,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  '$activeGolfers / 4',
+                  '$activeGolfers / $remainingGolfers',
                   style: theme.textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.w900,
                     color: AppColors.textPrimary,
