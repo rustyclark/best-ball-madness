@@ -218,9 +218,23 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         .toList();
                     final golferScores = golferScoresAsync.value ?? [];
                     final teeTimes = teeTimesAsync.value ?? [];
-                    final remainingGolfers = teamGolfers
-                        .where((g) => g.status != 'MC' && g.status != 'WD')
-                        .toList();
+                    final remainingGolfers = teamGolfers.where((g) {
+                      if (g.status == 'MC' && selectedRound >= 3) {
+                        return false;
+                      }
+                      if (g.status == 'WD') {
+                        final matches = teeTimes
+                            .where((t) => t.tournamentGolferId == g.id);
+                        final teeTime = matches.isNotEmpty ? matches.first : null;
+                        if (teeTime != null && teeTime.status == 'WD') {
+                          return false;
+                        }
+                        if (teeTime == null && selectedRound >= 2) {
+                          return false;
+                        }
+                      }
+                      return true;
+                    }).toList();
                     final remainingGolfersCount = remainingGolfers.length;
 
                     final activeGolfersCount = remainingGolfers.where((g) {
