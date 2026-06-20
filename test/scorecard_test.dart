@@ -382,6 +382,45 @@ void main() {
       expect(find.text('2'), findsAtLeast(1));
     });
 
+    testWidgets('Inactive golfers are greyed out on the scorecard', (
+      WidgetTester tester,
+    ) async {
+      // Set Golfer 2 status to MC (Missed Cut)
+      mockGolfers = [
+        mockGolfers[0],
+        TournamentGolfer(
+          id: 'tg-2',
+          tournamentId: 't-1',
+          golferProfileId: 'gp-2',
+          price: 25.0,
+          status: 'MC', // Missed Cut!
+          profile: GolferProfile(
+            id: 'gp-2',
+            espnId: 'espn-gp-2',
+            name: 'Golfer 2',
+          ),
+        ),
+        mockGolfers[2],
+        mockGolfers[3],
+      ];
+
+      await tester.pumpWidget(createScorecardWidget());
+      await tester.pumpAndSettle();
+
+      // Golfer 2 name should be rendered with AppColors.textMuted
+      final golfer2Text = find.text('Golfer\n2');
+      expect(golfer2Text, findsOneWidget);
+
+      final Text textWidget = tester.widget<Text>(golfer2Text);
+      expect(textWidget.style?.color, AppColors.textMuted);
+
+      // Status text for Golfer 2 should display "MISSED CUT" with AppColors.textMuted
+      final missedCutText = find.text('MISSED CUT');
+      expect(missedCutText, findsOneWidget);
+      final Text missedCutWidget = tester.widget<Text>(missedCutText);
+      expect(missedCutWidget.style?.color, AppColors.textMuted);
+    });
+
     test(
       'SelectedRoundNotifier preserves manual round selection when dependencies update',
       () {
