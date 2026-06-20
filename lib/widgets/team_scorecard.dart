@@ -17,6 +17,7 @@ class ScorecardCell extends ConsumerStatefulWidget {
   final String? scoreType;
   final int par;
   final bool isLowScore;
+  final bool isInactive;
 
   const ScorecardCell({
     super.key,
@@ -26,6 +27,7 @@ class ScorecardCell extends ConsumerStatefulWidget {
     required this.scoreType,
     required this.par,
     this.isLowScore = false,
+    this.isInactive = false,
   });
 
   @override
@@ -60,26 +62,30 @@ class _ScorecardCellState extends ConsumerState<ScorecardCell>
   @override
   Widget build(BuildContext context) {
     // Listen for realtime score events matching this golfer and hole to trigger the pulse
-    ref.listen<ScoreUpdateEvent?>(lastRealtimeScoreUpdateProvider, (
-      previous,
-      next,
-    ) {
-      if (next != null &&
-          next.tournamentGolferId == widget.golferId &&
-          next.hole == widget.hole) {
-        if (next.scoreType == 'BIRDIE' || next.scoreType == 'EAGLE') {
-          _pulseController.forward(from: 0.0);
+    if (!widget.isInactive) {
+      ref.listen<ScoreUpdateEvent?>(lastRealtimeScoreUpdateProvider, (
+        previous,
+        next,
+      ) {
+        if (next != null &&
+            next.tournamentGolferId == widget.golferId &&
+            next.hole == widget.hole) {
+          if (next.scoreType == 'BIRDIE' || next.scoreType == 'EAGLE') {
+            _pulseController.forward(from: 0.0);
+          }
         }
-      }
-    });
+      });
+    }
 
-    final colors = getScoreColors(widget.score, widget.par, widget.scoreType);
+    final colors = widget.isInactive
+        ? const ColorPair(AppColors.alternateRow, AppColors.textMuted)
+        : getScoreColors(widget.score, widget.par, widget.scoreType);
     final theme = Theme.of(context);
 
     return AnimatedBuilder(
       animation: _pulseAnimation,
       builder: (context, child) {
-        final pulseVal = _pulseAnimation.value;
+        final pulseVal = widget.isInactive ? 0.0 : _pulseAnimation.value;
         final cellColor = pulseVal > 0
             ? Color.lerp(colors.bg, AppColors.primary, pulseVal)
             : colors.bg;
@@ -91,12 +97,12 @@ class _ScorecardCellState extends ConsumerState<ScorecardCell>
             color: cellColor,
             borderRadius: BorderRadius.circular(4.0),
             border: Border.all(
-              color: pulseVal > 0
+              color: !widget.isInactive && pulseVal > 0
                   ? AppColors.primaryHover.withValues(alpha: pulseVal)
-                  : (widget.isLowScore
+                  : (!widget.isInactive && widget.isLowScore
                         ? Colors.amber.shade700
                         : Colors.transparent),
-              width: widget.isLowScore ? 2.0 : 1,
+              width: !widget.isInactive && widget.isLowScore ? 2.0 : 1,
             ),
           ),
           child: Text(
@@ -394,6 +400,27 @@ class _TeamScorecardState extends ConsumerState<TeamScorecard> {
                                                     golfer.id,
                                               )
                                               .toList();
+                                          final golferTeeTimes = teeTimes
+                                              .where(
+                                                (t) =>
+                                                    t.tournamentGolferId ==
+                                                    golfer.id,
+                                              )
+                                              .toList();
+                                          final golferTeeTime =
+                                              golferTeeTimes.isNotEmpty
+                                              ? golferTeeTimes.first
+                                              : null;
+                                          final isInactive =
+                                              golfer.status == 'WD' ||
+                                              (golfer.status == 'MC' &&
+                                                  selectedRound >= 3) ||
+                                              (golferTeeTime != null &&
+                                                  (golferTeeTime.status ==
+                                                          'MC' ||
+                                                      golferTeeTime.status ==
+                                                          'WD'));
+
                                           return _buildLeftGolferRow(
                                             golfer: golfer,
                                             scores: golferScores,
@@ -402,6 +429,7 @@ class _TeamScorecardState extends ConsumerState<TeamScorecard> {
                                             backgroundColor: index % 2 == 1
                                                 ? AppColors.alternateRow
                                                 : Colors.transparent,
+                                            isInactive: isInactive,
                                           );
                                         } else {
                                           return _buildLeftConcealedRow(
@@ -497,6 +525,28 @@ class _TeamScorecardState extends ConsumerState<TeamScorecard> {
                                                           golfer.id,
                                                     )
                                                     .toList();
+                                                final golferTeeTimes = teeTimes
+                                                    .where(
+                                                      (t) =>
+                                                          t.tournamentGolferId ==
+                                                          golfer.id,
+                                                    )
+                                                    .toList();
+                                                final golferTeeTime =
+                                                    golferTeeTimes.isNotEmpty
+                                                    ? golferTeeTimes.first
+                                                    : null;
+                                                final isInactive =
+                                                    golfer.status == 'WD' ||
+                                                    (golfer.status == 'MC' &&
+                                                        selectedRound >= 3) ||
+                                                    (golferTeeTime != null &&
+                                                        (golferTeeTime.status ==
+                                                                'MC' ||
+                                                            golferTeeTime
+                                                                    .status ==
+                                                                'WD'));
+
                                                 return _buildRightGolferRow(
                                                   golfer: golfer,
                                                   scores: golferScores,
@@ -507,6 +557,7 @@ class _TeamScorecardState extends ConsumerState<TeamScorecard> {
                                                       index % 2 == 1
                                                       ? AppColors.alternateRow
                                                       : Colors.transparent,
+                                                  isInactive: isInactive,
                                                 );
                                               } else {
                                                 return _buildRightConcealedRow(
@@ -738,7 +789,7 @@ class _TeamScorecardState extends ConsumerState<TeamScorecard> {
       return Text(
         'WITHDRAWN',
         style: theme.textTheme.labelSmall?.copyWith(
-          color: AppColors.scoreBogeyBg,
+          color: AppColors.textMuted,
           fontWeight: FontWeight.bold,
           letterSpacing: 0.5,
         ),
@@ -748,7 +799,7 @@ class _TeamScorecardState extends ConsumerState<TeamScorecard> {
       return Text(
         'MISSED CUT',
         style: theme.textTheme.labelSmall?.copyWith(
-          color: AppColors.textSecondary,
+          color: AppColors.textMuted,
           fontWeight: FontWeight.bold,
           letterSpacing: 0.5,
         ),
@@ -763,7 +814,7 @@ class _TeamScorecardState extends ConsumerState<TeamScorecard> {
         return Text(
           'WD',
           style: theme.textTheme.labelSmall?.copyWith(
-            color: AppColors.scoreBogeyBg,
+            color: AppColors.textMuted,
             fontWeight: FontWeight.bold,
           ),
         );
@@ -772,7 +823,7 @@ class _TeamScorecardState extends ConsumerState<TeamScorecard> {
         return Text(
           'MC',
           style: theme.textTheme.labelSmall?.copyWith(
-            color: AppColors.textSecondary,
+            color: AppColors.textMuted,
             fontWeight: FontWeight.bold,
           ),
         );
@@ -821,6 +872,7 @@ class _TeamScorecardState extends ConsumerState<TeamScorecard> {
     required List<TeeTime> teeTimes,
     required ThemeData theme,
     required Color backgroundColor,
+    bool isInactive = false,
   }) {
     int roundTotal = 0;
     bool hasScores = false;
@@ -860,6 +912,7 @@ class _TeamScorecardState extends ConsumerState<TeamScorecard> {
                         style: theme.textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                           height: 1.1,
+                          color: isInactive ? AppColors.textMuted : null,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -879,6 +932,7 @@ class _TeamScorecardState extends ConsumerState<TeamScorecard> {
                 hasScores ? '$roundTotal' : '-',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.bold,
+                  color: isInactive ? AppColors.textMuted : null,
                 ),
               ),
             ),
@@ -895,6 +949,7 @@ class _TeamScorecardState extends ConsumerState<TeamScorecard> {
     required List<HoleScore> allScores,
     required ThemeData theme,
     required Color backgroundColor,
+    bool isInactive = false,
   }) {
     return Container(
       height: 68.0,
@@ -922,6 +977,7 @@ class _TeamScorecardState extends ConsumerState<TeamScorecard> {
               scoreType: holeScore?.scoreType,
               par: par,
               isLowScore: isLow,
+              isInactive: isInactive,
             ),
           );
         }),

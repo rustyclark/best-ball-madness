@@ -11,10 +11,7 @@ import 'table.dart';
 class LeaderboardPreview extends ConsumerWidget {
   final bool showButton;
 
-  const LeaderboardPreview({
-    super.key,
-    this.showButton = true,
-  });
+  const LeaderboardPreview({super.key, this.showButton = true});
 
   String _formatScoreToPar(int? score) {
     if (score == null) return '-';
@@ -79,15 +76,21 @@ class LeaderboardPreview extends ConsumerWidget {
                   );
                 }
 
-                final activeStandings = standings.where((s) => s.status == 'ACTIVE').toList();
-                
+                final activeStandings = standings
+                    .where((s) => s.status == 'ACTIVE')
+                    .toList();
+
                 // Get top 3
                 final top3 = standings.take(3).toList();
-                final bool userInTop3 = userTeam != null && top3.any((s) => s.teamId == userTeam.id);
-                
+                final bool userInTop3 =
+                    userTeam != null &&
+                    top3.any((s) => s.teamId == userTeam.id);
+
                 LeaderboardStanding? userStanding;
                 if (userTeam != null && !userInTop3) {
-                  final matches = standings.where((s) => s.teamId == userTeam.id);
+                  final matches = standings.where(
+                    (s) => s.teamId == userTeam.id,
+                  );
                   if (matches.isNotEmpty) {
                     userStanding = matches.first;
                   }
@@ -98,7 +101,8 @@ class LeaderboardPreview extends ConsumerWidget {
                 final rows = <Widget>[
                   ...List.generate(top3.length, (index) {
                     final standing = top3[index];
-                    final isUserRow = userTeam != null && standing.teamId == userTeam.id;
+                    final isUserRow =
+                        userTeam != null && standing.teamId == userTeam.id;
                     final tied = _isTied(standing, activeStandings);
                     final rankText = standing.rank != null
                         ? (tied ? 'T-${standing.rank}' : '${standing.rank}')
@@ -111,10 +115,12 @@ class LeaderboardPreview extends ConsumerWidget {
                       columnWidths: columnWidths,
                       theme: theme,
                       isHighlighted: isUserRow,
-                      backgroundColor: index % 2 == 1 ? AppColors.alternateRow : Colors.transparent,
+                      backgroundColor: index % 2 == 1
+                          ? AppColors.alternateRow
+                          : Colors.transparent,
                     );
                   }),
-                  
+
                   if (userStanding != null) ...[
                     // Divider or Ellipsis to show gap
                     Container(
@@ -131,15 +137,17 @@ class LeaderboardPreview extends ConsumerWidget {
                       standing: userStanding,
                       rankText: userStanding.rank != null
                           ? (_isTied(userStanding, activeStandings)
-                              ? 'T-${userStanding.rank}'
-                              : '${userStanding.rank}')
+                                ? 'T-${userStanding.rank}'
+                                : '${userStanding.rank}')
                           : '-',
                       columnWidths: columnWidths,
                       theme: theme,
                       isHighlighted: true,
-                      backgroundColor: AppColors.primary.withValues(alpha: 0.05),
+                      backgroundColor: AppColors.primary.withValues(
+                        alpha: 0.05,
+                      ),
                     ),
-                  ]
+                  ],
                 ];
 
                 return Column(
@@ -150,17 +158,27 @@ class LeaderboardPreview extends ConsumerWidget {
                       headers: [
                         Padding(
                           padding: const EdgeInsets.only(left: AppSpacing.md),
-                          child: Text('Rank', style: theme.textTheme.labelMedium),
+                          child: Text(
+                            'Rank',
+                            style: theme.textTheme.labelMedium,
+                          ),
                         ),
                         Text('Team Name', style: theme.textTheme.labelMedium),
-                        Center(child: Text('Score', style: theme.textTheme.labelMedium)),
+                        Center(
+                          child: Text(
+                            'Score',
+                            style: theme.textTheme.labelMedium,
+                          ),
+                        ),
                       ],
                       rows: rows,
                     ),
                     if (showButton) ...[
                       const SizedBox(height: AppSpacing.md),
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.md,
+                        ),
                         child: ElevatedButton(
                           onPressed: () {
                             Navigator.push(
@@ -224,13 +242,13 @@ class LeaderboardPreview extends ConsumerWidget {
   }) {
     return BbmTableRow(
       columnWidths: columnWidths,
-      backgroundColor: isHighlighted ? AppColors.primary.withValues(alpha: 0.1) : backgroundColor,
+      backgroundColor: isHighlighted
+          ? AppColors.primary.withValues(alpha: 0.1)
+          : backgroundColor,
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => const LeaderboardScreen(),
-          ),
+          MaterialPageRoute(builder: (context) => const LeaderboardScreen()),
         );
       },
       cells: [
@@ -248,7 +266,9 @@ class LeaderboardPreview extends ConsumerWidget {
 
         // Team Name
         Text(
-          isHighlighted ? '${standing.teamName.toUpperCase()} (YOU)' : standing.teamName,
+          isHighlighted
+              ? '${standing.teamName.toUpperCase()} (YOU)'
+              : standing.teamName,
           style: theme.textTheme.bodyMedium?.copyWith(
             fontWeight: isHighlighted ? FontWeight.bold : FontWeight.normal,
             color: isHighlighted ? AppColors.primary : AppColors.textPrimary,
@@ -264,8 +284,8 @@ class LeaderboardPreview extends ConsumerWidget {
               color: standing.totalToPar < 0
                   ? AppColors.accent.withValues(alpha: 0.15)
                   : (standing.totalToPar > 0
-                      ? AppColors.scoreBogeyBg.withValues(alpha: 0.15)
-                      : Colors.transparent),
+                        ? AppColors.scoreBogeyBg.withValues(alpha: 0.15)
+                        : Colors.transparent),
               borderRadius: BorderRadius.circular(4.0),
             ),
             child: Text(
@@ -275,8 +295,8 @@ class LeaderboardPreview extends ConsumerWidget {
                 color: standing.totalToPar < 0
                     ? AppColors.accent
                     : (standing.totalToPar > 0
-                        ? AppColors.scoreBogeyBg
-                        : AppColors.textPrimary),
+                          ? AppColors.scoreBogeyBg
+                          : AppColors.textPrimary),
               ),
             ),
           ),

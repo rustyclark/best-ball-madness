@@ -291,6 +291,39 @@ void main() {
       );
     });
 
+    testWidgets(
+      'Scorecard defaults to current round (R3) on load even if team status is CUT',
+      (WidgetTester tester) async {
+        mockTournament = Tournament(
+          id: 't-1',
+          espnEventId: 'espn-1',
+          name: 'The Masters',
+          course: 'Augusta National',
+          location: 'Augusta, GA',
+          par: 72,
+          yards: 7400,
+          startDate: DateTime.now().subtract(const Duration(days: 1)),
+          endDate: DateTime.now().add(const Duration(days: 2)),
+          status: 'IN_PROGRESS',
+          currentRound: 3, // Round 3!
+        );
+
+        mockTeam = UserTeam(
+          id: 'team-1',
+          userId: 'user-1',
+          tournamentId: 't-1',
+          status: 'CUT', // CUT status!
+          golferIds: ['tg-1', 'tg-2', 'tg-3', 'tg-4'],
+        );
+
+        await tester.pumpWidget(createScorecardWidget());
+        await tester.pumpAndSettle();
+
+        // Should default to Round 3 scorecard instead of Round 2 scorecard
+        expect(find.text('ROUND 3 SCORECARD'), findsOneWidget);
+      },
+    );
+
     testWidgets('DQ banner is visible when team status is DQ', (
       WidgetTester tester,
     ) async {
@@ -380,6 +413,75 @@ void main() {
 
       // Score should now be updated to '2'
       expect(find.text('2'), findsAtLeast(1));
+    });
+
+    testWidgets('Inactive golfers are greyed out on the scorecard', (
+      WidgetTester tester,
+    ) async {
+      // Set currentRound to 3 so we can test both rounds
+      mockTournament = Tournament(
+        id: 't-1',
+        espnEventId: 'espn-1',
+        name: 'The Masters',
+        course: 'Augusta National',
+        location: 'Augusta, GA',
+        par: 72,
+        yards: 7400,
+        startDate: DateTime.now().subtract(const Duration(days: 1)),
+        endDate: DateTime.now().add(const Duration(days: 2)),
+        status: 'IN_PROGRESS',
+        currentRound: 3, // Current round is 3
+      );
+
+      // Set Golfer 2 status to MC (Missed Cut)
+      mockGolfers = [
+        mockGolfers[0],
+        TournamentGolfer(
+          id: 'tg-2',
+          tournamentId: 't-1',
+          golferProfileId: 'gp-2',
+          price: 25.0,
+          status: 'MC', // Missed Cut!
+          profile: GolferProfile(
+            id: 'gp-2',
+            espnId: 'espn-gp-2',
+            name: 'Golfer 2',
+          ),
+        ),
+        mockGolfers[2],
+        mockGolfers[3],
+      ];
+
+      await tester.pumpWidget(createScorecardWidget());
+      await tester.pumpAndSettle();
+
+      // By default it should show Round 3
+      expect(find.text('ROUND 3 SCORECARD'), findsOneWidget);
+
+      // In Round 3, Golfer 2 name should be rendered with AppColors.textMuted (greyed out)
+      final golfer2Text = find.text('Golfer\n2');
+      expect(golfer2Text, findsOneWidget);
+      final Text textWidgetRound3 = tester.widget<Text>(golfer2Text);
+      expect(textWidgetRound3.style?.color, AppColors.textMuted);
+
+      // Status text for Golfer 2 should display "MISSED CUT" with AppColors.textMuted
+      final missedCutText = find.text('MISSED CUT');
+      expect(missedCutText, findsOneWidget);
+      final Text missedCutWidgetRound3 = tester.widget<Text>(missedCutText);
+      expect(missedCutWidgetRound3.style?.color, AppColors.textMuted);
+
+      // Now switch back to Round 2 tab
+      final r2Tab = find.text('R2');
+      expect(r2Tab, findsOneWidget);
+      await tester.tap(r2Tab);
+      await tester.pumpAndSettle();
+
+      expect(find.text('ROUND 2 SCORECARD'), findsOneWidget);
+
+      // In Round 2, Golfer 2 should NOT be greyed out (text color should be null or not AppColors.textMuted)
+      final golfer2TextRound2 = find.text('Golfer\n2');
+      final Text textWidgetRound2 = tester.widget<Text>(golfer2TextRound2);
+      expect(textWidgetRound2.style?.color, isNot(AppColors.textMuted));
     });
 
     test(

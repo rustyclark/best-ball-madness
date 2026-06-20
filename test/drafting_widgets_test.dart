@@ -437,7 +437,9 @@ void main() {
         espnId: 'locked',
         name: 'Locked Scheffler',
       ),
-      teeTime: DateTime.now().subtract(const Duration(minutes: 20)).toUtc(), // Teed off 20 minutes ago
+      teeTime: DateTime.now()
+          .subtract(const Duration(minutes: 20))
+          .toUtc(), // Teed off 20 minutes ago
     );
 
     final unlockedGolfer = TournamentGolfer(
@@ -451,7 +453,9 @@ void main() {
         espnId: 'unlocked',
         name: 'Unlocked McIlroy',
       ),
-      teeTime: DateTime.now().add(const Duration(hours: 1)).toUtc(), // Tees off in 1 hour
+      teeTime: DateTime.now()
+          .add(const Duration(hours: 1))
+          .toUtc(), // Tees off in 1 hour
     );
 
     await tester.pumpWidget(
@@ -462,9 +466,7 @@ void main() {
           ),
         ],
         child: const MaterialApp(
-          home: Scaffold(
-            body: DraftPanel(isLocked: false),
-          ),
+          home: Scaffold(body: DraftPanel(isLocked: false)),
         ),
       ),
     );

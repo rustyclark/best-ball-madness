@@ -218,7 +218,29 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         .toList();
                     final golferScores = golferScoresAsync.value ?? [];
                     final teeTimes = teeTimesAsync.value ?? [];
-                    final activeGolfersCount = teamGolfers.where((g) {
+                    final remainingGolfers = teamGolfers.where((g) {
+                      if (g.status == 'MC' && selectedRound >= 3) {
+                        return false;
+                      }
+                      if (g.status == 'WD') {
+                        final matches = teeTimes.where(
+                          (t) => t.tournamentGolferId == g.id,
+                        );
+                        final teeTime = matches.isNotEmpty
+                            ? matches.first
+                            : null;
+                        if (teeTime != null && teeTime.status == 'WD') {
+                          return false;
+                        }
+                        if (teeTime == null && selectedRound >= 2) {
+                          return false;
+                        }
+                      }
+                      return true;
+                    }).toList();
+                    final remainingGolfersCount = remainingGolfers.length;
+
+                    final activeGolfersCount = remainingGolfers.where((g) {
                       final hasScores = golferScores.any(
                         (s) => s.tournamentGolferId == g.id,
                       );
@@ -246,6 +268,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           _buildStatsArea(
                             theme,
                             activeGolfersCount,
+                            remainingGolfersCount,
                             userTeamScore,
                           ),
                           const SizedBox(height: AppSpacing.md),
@@ -403,7 +426,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     return '$score';
   }
 
-  Widget _buildStatsArea(ThemeData theme, int activeGolfers, int? teamScore) {
+  Widget _buildStatsArea(
+    ThemeData theme,
+    int activeGolfers,
+    int remainingGolfers,
+    int? teamScore,
+  ) {
     return Row(
       children: [
         Expanded(
@@ -417,7 +445,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  '$activeGolfers / 4',
+                  '$activeGolfers / $remainingGolfers',
                   style: theme.textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.w900,
                     color: AppColors.textPrimary,

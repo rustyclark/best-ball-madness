@@ -280,7 +280,6 @@ class SelectedRoundNotifier extends Notifier<int> {
   @override
   int build() {
     final current = ref.watch(currentRoundProvider);
-    final userTeam = ref.watch(userTeamProvider).value;
     final tournament = ref.watch(activeTournamentProvider).value;
 
     if (tournament != null && tournament.id != _lastTournamentId) {
@@ -292,9 +291,6 @@ class SelectedRoundNotifier extends Notifier<int> {
       return _manuallySelectedRound!;
     }
 
-    if (userTeam != null && userTeam.status == 'CUT' && current >= 2) {
-      return 2;
-    }
     return current;
   }
 

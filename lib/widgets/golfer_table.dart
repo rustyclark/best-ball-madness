@@ -219,8 +219,12 @@ class _GolferTableState extends ConsumerState<GolferTable> {
     bool isExpanded,
     ThemeData theme,
   ) {
-    final isGolferLocked = widget.isLocked || (golfer.teeTime != null &&
-        DateTime.now().toUtc().isAfter(golfer.teeTime!.subtract(const Duration(minutes: 15))));
+    final isGolferLocked =
+        widget.isLocked ||
+        (golfer.teeTime != null &&
+            DateTime.now().toUtc().isAfter(
+              golfer.teeTime!.subtract(const Duration(minutes: 15)),
+            ));
 
     return Column(
       children: [
@@ -371,7 +375,11 @@ class _GolferTableState extends ConsumerState<GolferTable> {
                               const SizedBox(width: 6),
                             ],
                             if (golfer.teeTime != null) ...[
-                              if (DateTime.now().toUtc().isAfter(golfer.teeTime!.subtract(const Duration(minutes: 15)))) ...[
+                              if (DateTime.now().toUtc().isAfter(
+                                golfer.teeTime!.subtract(
+                                  const Duration(minutes: 15),
+                                ),
+                              )) ...[
                                 const Icon(
                                   Icons.lock,
                                   color: AppColors.scoreBogeyBg,
