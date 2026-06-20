@@ -457,8 +457,7 @@ void main() {
           {'tournament_golfer_id': 'tg-4'},
         ];
 
-        // 1 of the active golfers has teed off (Jon Rahm) by having scores.
-        // The other active golfer has not teed off yet.
+        // Initially load Round 3 mock data
         fakeSupabase.mockData['hole_scores'] = [
           {
             'id': 'hs-1',
@@ -539,6 +538,63 @@ void main() {
 
         // Numerator should be 1 (Jon Rahm teed off), Denominator should be 2 (Jon Rahm & Cameron Young remaining)
         expect(find.text('1 / 2'), findsOneWidget);
+
+        // Update the mock data to switch to Round 2 values before tapping tab
+        fakeSupabase.mockData['hole_scores'] = [
+          {
+            'id': 'hs-2',
+            'tournament_golfer_id': 'tg-1', // Scottie Scheffler teed off
+            'round': 2,
+            'hole': 1,
+            'par': 4,
+            'score': 4,
+            'score_type': 'PAR',
+          },
+        ];
+
+        fakeSupabase.mockData['tee_times'] = [
+          {
+            'id': 'tt-2-1',
+            'tournament_golfer_id': 'tg-1',
+            'round': 2,
+            'tee_time_utc': DateTime.now().subtract(const Duration(hours: 1)).toUtc().toIso8601String(),
+            'start_tee': 1,
+            'status': 'ACTIVE',
+          },
+          {
+            'id': 'tt-2-2',
+            'tournament_golfer_id': 'tg-2',
+            'round': 2,
+            'tee_time_utc': DateTime.now().add(const Duration(hours: 1)).toUtc().toIso8601String(),
+            'start_tee': 1,
+            'status': 'ACTIVE',
+          },
+          {
+            'id': 'tt-2-3',
+            'tournament_golfer_id': 'tg-3',
+            'round': 2,
+            'tee_time_utc': DateTime.now().add(const Duration(hours: 1)).toUtc().toIso8601String(),
+            'start_tee': 1,
+            'status': 'ACTIVE',
+          },
+          {
+            'id': 'tt-2-4',
+            'tournament_golfer_id': 'tg-4',
+            'round': 2,
+            'tee_time_utc': DateTime.now().add(const Duration(hours: 1)).toUtc().toIso8601String(),
+            'start_tee': 1,
+            'status': 'ACTIVE',
+          },
+        ];
+
+        // Tap the R2 tab on the scorecard to switch to Round 2
+        final r2Tab = find.text('R2');
+        expect(r2Tab, findsOneWidget);
+        await tester.tap(r2Tab);
+        await tester.pumpAndSettle();
+
+        // Numerator should be 1 (Scottie Scheffler teed off), Denominator should be 4 (all golfers remaining in Round 2)
+        expect(find.text('1 / 4'), findsOneWidget);
       },
     );
   });

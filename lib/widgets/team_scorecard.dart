@@ -406,11 +406,11 @@ class _TeamScorecardState extends ConsumerState<TeamScorecard> {
                                           final golferTeeTime = golferTeeTimes.isNotEmpty
                                               ? golferTeeTimes.first
                                               : null;
-                                          final isInactive = golfer.status == 'MC' ||
-                                              golfer.status == 'WD' ||
-                                              (golferTeeTime != null &&
-                                                  (golferTeeTime.status == 'MC' ||
-                                                      golferTeeTime.status == 'WD'));
+                                           final isInactive = golfer.status == 'WD' ||
+                                               (golfer.status == 'MC' && selectedRound >= 3) ||
+                                               (golferTeeTime != null &&
+                                                   (golferTeeTime.status == 'MC' ||
+                                                       golferTeeTime.status == 'WD'));
 
                                           return _buildLeftGolferRow(
                                             golfer: golfer,
@@ -522,8 +522,8 @@ class _TeamScorecardState extends ConsumerState<TeamScorecard> {
                                                 final golferTeeTime = golferTeeTimes.isNotEmpty
                                                     ? golferTeeTimes.first
                                                     : null;
-                                                final isInactive = golfer.status == 'MC' ||
-                                                    golfer.status == 'WD' ||
+                                                final isInactive = golfer.status == 'WD' ||
+                                                    (golfer.status == 'MC' && selectedRound >= 3) ||
                                                     (golferTeeTime != null &&
                                                         (golferTeeTime.status == 'MC' ||
                                                             golferTeeTime.status == 'WD'));
