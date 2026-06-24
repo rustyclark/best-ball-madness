@@ -5,6 +5,7 @@ import '../providers/draft_providers.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../screens/leaderboard/leaderboard_screen.dart';
+import 'button.dart';
 import 'card.dart';
 import 'table.dart';
 
@@ -179,7 +180,8 @@ class LeaderboardPreview extends ConsumerWidget {
                         padding: const EdgeInsets.symmetric(
                           horizontal: AppSpacing.md,
                         ),
-                        child: ElevatedButton(
+                        child: BbmButton(
+                          text: 'VIEW FULL LEADERBOARD',
                           onPressed: () {
                             Navigator.push(
                               context,
@@ -188,24 +190,6 @@ class LeaderboardPreview extends ConsumerWidget {
                               ),
                             );
                           },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              vertical: AppSpacing.md,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: AppSpacing.borderRadiusLg,
-                            ),
-                          ),
-                          child: const Text(
-                            'VIEW FULL LEADERBOARD',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                              letterSpacing: 1.0,
-                            ),
-                          ),
                         ),
                       ),
                     ],
