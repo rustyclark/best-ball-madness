@@ -220,8 +220,14 @@ serve(async (req) => {
     if (!tournament.lock_time_utc) {
       const { data: r1TeeTimes, error: r1Error } = await supabaseClient
         .from('tee_times')
-        .select('tee_time_utc')
+        .select(`
+          tee_time_utc,
+          tournament_golfers!inner (
+            tournament_id
+          )
+        `)
         .eq('round', 1)
+        .eq('tournament_golfers.tournament_id', tournamentId)
         .order('tee_time_utc', { ascending: true })
         .limit(1)
 
