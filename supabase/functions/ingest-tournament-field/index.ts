@@ -83,6 +83,19 @@ serve(async (req) => {
       throw new Error(`Tournament upsert failed: ${tError?.message}`)
     }
 
+    // Fetch existing tournament golfers to preserve their prices if running multiple times
+    const { data: existingTgs, error: existingTgError } = await supabaseClient
+      .from('tournament_golfers')
+      .select('golfer_profile_id, price')
+      .eq('tournament_id', tournament.id)
+
+    const existingPriceMap = new Map<string, number>()
+    if (!existingTgError && existingTgs) {
+      for (const tg of existingTgs) {
+        existingPriceMap.set(tg.golfer_profile_id, Number(tg.price))
+      }
+    }
+
     // 3. Fetch OWGR Top 100 Rankings to match with players
     const currentYear = new Date(start_date).getFullYear()
     const rankingsRes = await fetch(`https://sports.core.api.espn.com/v2/sports/golf/leagues/all/seasons/${currentYear}/rankings/1`)
@@ -271,12 +284,15 @@ serve(async (req) => {
         const tgStatus = competitor.status?.type?.name === "STATUS_CUT" ? "MC" : 
                          competitor.status?.type?.name === "STATUS_WITHDRAWN" ? "WD" : "ACTIVE";
 
+        const existingPrice = existingPriceMap.get(profile.id);
+        const priceToSet = existingPrice !== undefined ? existingPrice : 20.00;
+
         const { data: tgRow, error: tgError } = await supabaseClient
           .from('tournament_golfers')
           .upsert({
             tournament_id: tournament.id,
             golfer_profile_id: profile.id,
-            price: 20.00, // default baseline
+            price: priceToSet,
             status: tgStatus,
           }, { onConflict: 'tournament_id,golfer_profile_id' })
           .select()
@@ -310,12 +326,40 @@ serve(async (req) => {
       }
     }
 
+    // 8. Trigger pricing algorithm run to set dynamic prices immediately
+    let pricingMessage = "Pricing run not triggered."
+    try {
+      const pricingRes = await fetch(
+        `${Deno.env.get('SUPABASE_URL')}/functions/v1/run-pricing-algorithm`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+          },
+          body: JSON.stringify({}),
+        }
+      )
+      if (!pricingRes.ok) {
+        console.error(`Failed to trigger pricing algorithm: ${pricingRes.statusText}`)
+        pricingMessage = `Failed to trigger pricing: ${pricingRes.statusText}`
+      } else {
+        const pricingData = await pricingRes.json()
+        console.log(`Successfully triggered pricing algorithm: ${JSON.stringify(pricingData)}`)
+        pricingMessage = `Pricing run triggered successfully. priced: ${pricingData.golfers_priced}`
+      }
+    } catch (pricingErr) {
+      console.error(`Failed to trigger pricing algorithm: ${pricingErr.message}`)
+      pricingMessage = `Failed to trigger pricing: ${pricingErr.message}`
+    }
+
     return new Response(
       JSON.stringify({ 
         message: "Tournament field ingestion completed.", 
         tournament: tournament.name,
         golfers_ingested: results.length,
-        golfers_active: activeTgIds.length
+        golfers_active: activeTgIds.length,
+        pricing: pricingMessage
       }), 
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
