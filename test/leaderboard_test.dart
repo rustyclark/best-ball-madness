@@ -233,8 +233,8 @@ void main() {
         await tester.pumpWidget(createLeaderboardWidget());
         await tester.pumpAndSettle();
 
-        // Verify that all section headers exist
-        expect(find.text('ACTIVE COMPETITORS'), findsOneWidget);
+        // Verify that all section headers exist (except active competitors which was removed)
+        expect(find.text('ACTIVE COMPETITORS'), findsNothing);
         expect(find.text('CUT / ELIMINATED'), findsOneWidget);
         expect(find.text('DISQUALIFIED'), findsOneWidget);
 
@@ -246,7 +246,7 @@ void main() {
 
         // Verify scores format relative to par correctly
         expect(find.text('-5'), findsOneWidget);
-        expect(find.text('-2'), findsNWidgets(2));
+        expect(find.text('-2'), findsOneWidget);
         expect(find.text('+4'), findsOneWidget);
         expect(find.text('+10'), findsOneWidget);
 
@@ -322,8 +322,12 @@ void main() {
         await tester.pumpWidget(createLeaderboardWidget());
         await tester.pumpAndSettle();
 
-        // Tap on the row containing 'Team Cut One'
+        // Tap on the row containing 'Team Cut One' to expand it
         await tester.tap(find.text('Team Cut One'));
+        await tester.pumpAndSettle();
+
+        // Tap on the scorecard shortcut button in the expanded view
+        await tester.tap(find.byIcon(Icons.analytics_outlined));
         await tester.pumpAndSettle();
 
         // Verify navigation to ScorecardScreen and that the competitor's app bar title is shown
@@ -391,6 +395,34 @@ void main() {
         // Verify new score -9 is now displayed, and -5 is gone
         expect(find.text('-9'), findsOneWidget);
         expect(find.text('-5'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'Tapping a row expands it to display individual round scores and collapses it on another tap',
+      (WidgetTester tester) async {
+        await tester.pumpWidget(createLeaderboardWidget());
+        await tester.pumpAndSettle();
+
+        // R3 and R4 should not be visible in collapsed state
+        expect(find.text('R3'), findsNothing);
+        expect(find.text('R4'), findsNothing);
+
+        // Tap the row to expand
+        await tester.tap(find.text('Team Active Two'));
+        await tester.pumpAndSettle();
+
+        // Now they should be visible
+        expect(find.text('R3'), findsOneWidget);
+        expect(find.text('R4'), findsOneWidget);
+
+        // Tap again to collapse
+        await tester.tap(find.text('Team Active Two'));
+        await tester.pumpAndSettle();
+
+        // Now they should be hidden again
+        expect(find.text('R3'), findsNothing);
+        expect(find.text('R4'), findsNothing);
       },
     );
   });

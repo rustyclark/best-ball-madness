@@ -152,6 +152,7 @@ class LeaderboardPreview extends ConsumerWidget {
                 ];
 
                 return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     BbmTable(
                       minWidth: 300.0,
@@ -181,7 +182,7 @@ class LeaderboardPreview extends ConsumerWidget {
                           horizontal: AppSpacing.md,
                         ),
                         child: BbmButton(
-                          text: 'VIEW FULL LEADERBOARD',
+                          text: 'View Leaderboard',
                           onPressed: () {
                             Navigator.push(
                               context,

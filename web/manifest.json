@@ -1,11 +1,11 @@
 {
-    "name": "best_ball_madness",
-    "short_name": "best_ball_madness",
+    "name": "Best Ball Madness",
+    "short_name": "Best Ball Madness",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Weekly fantasy best-ball golf game",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
