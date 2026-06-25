@@ -6,8 +6,7 @@ class GolferAvatar extends StatelessWidget {
   final GolferProfile profile;
   final double size;
 
-  const GolferAvatar({Key? key, required this.profile, this.size = 40})
-    : super(key: key);
+  const GolferAvatar({super.key, required this.profile, this.size = 40});
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +23,7 @@ class GolferAvatar extends StatelessWidget {
 
     final fallback = CircleAvatar(
       radius: size / 2,
-      backgroundColor: AppColors.primary.withOpacity(0.1),
+      backgroundColor: AppColors.primary.withValues(alpha: 0.1),
       child: Text(
         initials,
         style: TextStyle(
