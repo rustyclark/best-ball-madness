@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/draft_providers.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
+import 'golfer_avatar.dart';
 
 enum GolferSortColumn { name, price, rank, average }
 
@@ -296,6 +297,8 @@ class _GolferTableState extends ConsumerState<GolferTable> {
                             ),
                     ),
                   ),
+                GolferAvatar(profile: golfer.profile, size: 60),
+                const SizedBox(width: AppSpacing.sm),
                 // Golfer details
                 Expanded(
                   child: Column(
