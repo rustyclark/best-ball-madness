@@ -16,6 +16,7 @@ import '../../widgets/team_scorecard.dart';
 import '../../widgets/leaderboard_preview.dart';
 import '../leaderboard/leaderboard_screen.dart';
 import 'available_golfers_screen.dart';
+import 'edit_roster_screen.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -107,13 +108,27 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       }
     }
 
-    // Check if any golfer on user's SAVED roster is WD pre-lock
+    // Check if any golfer on user's SAVED roster is WD and can still be edited (not locked)
     final showWdBanner =
-        !isTeamLocked &&
+        activeTournament?.status != 'COMPLETED' &&
         userTeam != null &&
-        golfers.any(
-          (g) => userTeam.golferIds.contains(g.id) && g.status == 'WD',
-        );
+        golfers.any((g) {
+          if (!userTeam.golferIds.contains(g.id) || g.status != 'WD') {
+            return false;
+          }
+          final golferTeeTimeMatches = (teeTimesAsync.value ?? []).where(
+            (t) => t.tournamentGolferId == g.id,
+          );
+          final teeTime = golferTeeTimeMatches.isNotEmpty
+              ? golferTeeTimeMatches.first
+              : null;
+          final isLocked =
+              teeTime != null &&
+              DateTime.now().toUtc().isAfter(
+                teeTime.teeTimeUtc.subtract(const Duration(minutes: 15)),
+              );
+          return !isLocked;
+        });
 
     return ResponsiveLayout(
       appBar: AppBar(
@@ -183,14 +198,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
               // Lock Info Banner (informational post-lock/during draft)
               if (activeTournament != null &&
-                  !isTeamLocked &&
                   activeTournament.status != 'COMPLETED') ...[
                 _buildBanner(
-                  text:
-                      'Drafting is open! Golfers lock individually 15 minutes prior to their tee times.',
-                  bgColor: AppColors.primary,
-                  textColor: AppColors.primary,
-                  icon: Icons.lock_clock_outlined,
+                  text: isTeamLocked
+                      ? 'Tournament has started! You can still edit golfers who have not teed off yet.'
+                      : 'Drafting is open! Golfers lock individually 15 minutes prior to their tee times.',
+                  bgColor: isTeamLocked ? AppColors.accent : AppColors.primary,
+                  textColor: isTeamLocked
+                      ? AppColors.accent
+                      : AppColors.primary,
+                  icon: isTeamLocked
+                      ? Icons.edit_calendar_outlined
+                      : Icons.lock_clock_outlined,
                 ),
                 const SizedBox(height: AppSpacing.md),
               ],
@@ -279,6 +298,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             showBanners: false,
                           ),
                           const SizedBox(height: AppSpacing.md),
+                          if (activeTournament.status != 'COMPLETED') ...[
+                            _buildEditRosterCard(context, theme, isRosterSaved),
+                            const SizedBox(height: AppSpacing.md),
+                          ],
                           const LeaderboardPreview(showButton: false),
                           const SizedBox(height: AppSpacing.md),
                           _buildLeaderboardCard(context, theme),
@@ -510,6 +533,66 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildEditRosterCard(
+    BuildContext context,
+    ThemeData theme,
+    bool isRosterSaved,
+  ) {
+    return BbmCard(
+      onTap: () {
+        // Re-sync local draft state to currently saved golfers first
+        final userTeam = ref.read(userTeamProvider).value;
+        final golfers = ref.read(golferListProvider).value ?? [];
+        if (userTeam != null) {
+          final savedGolfers = golfers
+              .where((g) => userTeam.golferIds.contains(g.id))
+              .toList();
+          ref
+              .read(draftStateNotifierProvider.notifier)
+              .setSelection(savedGolfers);
+        }
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const EditRosterScreen()),
+        );
+      },
+      child: Row(
+        children: [
+          const Icon(Icons.edit_outlined, color: AppColors.primary, size: 24),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isRosterSaved ? 'EDIT ROSTER' : 'DRAFT TEAM',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  isRosterSaved
+                      ? 'Swap out golfers who have not teed off yet.'
+                      : 'Draft a team from golfers who have not teed off yet.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Icon(
+            Icons.arrow_forward_ios,
+            size: 16,
+            color: AppColors.primary,
+          ),
+        ],
+      ),
     );
   }
 

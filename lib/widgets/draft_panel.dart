@@ -12,8 +12,9 @@ import 'golfer_avatar.dart';
 
 class DraftPanel extends ConsumerStatefulWidget {
   final bool isLocked;
+  final VoidCallback? onSaveSuccess;
 
-  const DraftPanel({super.key, required this.isLocked});
+  const DraftPanel({super.key, required this.isLocked, this.onSaveSuccess});
 
   @override
   ConsumerState<DraftPanel> createState() => _DraftPanelState();
@@ -37,6 +38,7 @@ class _DraftPanelState extends ConsumerState<DraftPanel> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Roster saved successfully!')),
         );
+        widget.onSaveSuccess?.call();
       }
     } catch (e) {
       if (mounted) {
@@ -209,9 +211,6 @@ class _DraftPanelState extends ConsumerState<DraftPanel> {
                                   ),
                                 ),
                                 onPressed: () {
-                                  ref
-                                      .read(draftStateNotifierProvider.notifier)
-                                      .removeGolfer(golfer);
                                   final golfers =
                                       ref.read(golferListProvider).value ?? [];
                                   Navigator.push(
@@ -221,6 +220,7 @@ class _DraftPanelState extends ConsumerState<DraftPanel> {
                                           AvailableGolfersScreen(
                                             golfers: golfers,
                                             isLocked: widget.isLocked,
+                                            replacingGolfer: golfer,
                                           ),
                                     ),
                                   );

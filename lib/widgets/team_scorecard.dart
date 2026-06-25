@@ -7,6 +7,7 @@ import '../providers/leaderboard_providers.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../utils/score_utils.dart';
+import '../screens/dashboard/edit_roster_screen.dart';
 import 'card.dart';
 
 /// Interactive scorecard cell displaying a golfer's score, with a realtime green pulse animation.
@@ -346,19 +347,72 @@ class _TeamScorecardState extends ConsumerState<TeamScorecard> {
                         horizontal: AppSpacing.md,
                       ),
                       child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Icon(
-                            Icons.grid_on_outlined,
-                            color: AppColors.primary,
-                            size: 20,
-                          ),
-                          const SizedBox(width: AppSpacing.sm),
-                          Text(
-                            'ROUND $selectedRound SCORECARD',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
+                          Expanded(
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.grid_on_outlined,
+                                  color: AppColors.primary,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: AppSpacing.sm),
+                                Expanded(
+                                  child: Text(
+                                    'ROUND $selectedRound SCORECARD',
+                                    style: theme.textTheme.titleMedium
+                                        ?.copyWith(fontWeight: FontWeight.bold),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
+                          if (!isCompetitor &&
+                              tournament != null &&
+                              tournament.status != 'COMPLETED')
+                            TextButton.icon(
+                              icon: const Icon(
+                                Icons.edit_outlined,
+                                size: 16,
+                                color: AppColors.primary,
+                              ),
+                              label: const Text(
+                                'EDIT ROSTER',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                              onPressed: () {
+                                // Re-sync local draft state to currently saved golfers first
+                                final userTeam = ref
+                                    .read(userTeamProvider)
+                                    .value;
+                                final golfers =
+                                    ref.read(golferListProvider).value ?? [];
+                                if (userTeam != null) {
+                                  final savedGolfers = golfers
+                                      .where(
+                                        (g) =>
+                                            userTeam.golferIds.contains(g.id),
+                                      )
+                                      .toList();
+                                  ref
+                                      .read(draftStateNotifierProvider.notifier)
+                                      .setSelection(savedGolfers);
+                                }
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const EditRosterScreen(),
+                                  ),
+                                );
+                              },
+                            ),
                         ],
                       ),
                     ),

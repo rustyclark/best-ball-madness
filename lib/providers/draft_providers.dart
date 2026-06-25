@@ -129,6 +129,12 @@ class DraftStateNotifier extends Notifier<List<TournamentGolfer>> {
     state = state.where((g) => g.id != golfer.id).toList();
   }
 
+  bool replaceGolfer(TournamentGolfer oldGolfer, TournamentGolfer newGolfer) {
+    if (state.any((g) => g.id == newGolfer.id)) return false;
+    state = state.map((g) => g.id == oldGolfer.id ? newGolfer : g).toList();
+    return true;
+  }
+
   void clear() {
     state = [];
   }
