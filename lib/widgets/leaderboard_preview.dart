@@ -182,7 +182,7 @@ class LeaderboardPreview extends ConsumerWidget {
                           horizontal: AppSpacing.md,
                         ),
                         child: BbmButton(
-                          text: 'View Full Leaderboard',
+                          text: 'View Leaderboard',
                           onPressed: () {
                             Navigator.push(
                               context,
