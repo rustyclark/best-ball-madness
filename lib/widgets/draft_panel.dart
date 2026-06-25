@@ -211,9 +211,6 @@ class _DraftPanelState extends ConsumerState<DraftPanel> {
                                   ),
                                 ),
                                 onPressed: () {
-                                  ref
-                                      .read(draftStateNotifierProvider.notifier)
-                                      .removeGolfer(golfer);
                                   final golfers =
                                       ref.read(golferListProvider).value ?? [];
                                   Navigator.push(
@@ -223,6 +220,7 @@ class _DraftPanelState extends ConsumerState<DraftPanel> {
                                           AvailableGolfersScreen(
                                             golfers: golfers,
                                             isLocked: widget.isLocked,
+                                            replacingGolfer: golfer,
                                           ),
                                     ),
                                   );
