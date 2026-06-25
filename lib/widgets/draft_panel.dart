@@ -11,8 +11,9 @@ import 'card.dart';
 
 class DraftPanel extends ConsumerStatefulWidget {
   final bool isLocked;
+  final VoidCallback? onSaveSuccess;
 
-  const DraftPanel({super.key, required this.isLocked});
+  const DraftPanel({super.key, required this.isLocked, this.onSaveSuccess});
 
   @override
   ConsumerState<DraftPanel> createState() => _DraftPanelState();
@@ -36,6 +37,7 @@ class _DraftPanelState extends ConsumerState<DraftPanel> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Roster saved successfully!')),
         );
+        widget.onSaveSuccess?.call();
       }
     } catch (e) {
       if (mounted) {
