@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/leaderboard_providers.dart';
+import '../../providers/draft_providers.dart';
 import '../../theme/colors.dart';
 import '../../theme/spacing.dart';
 import '../../widgets/card.dart';
@@ -9,14 +10,36 @@ import '../../widgets/table.dart';
 import '../scorecard/scorecard_screen.dart';
 
 /// Leaderboard screen displaying current tournament standings.
-class LeaderboardScreen extends ConsumerWidget {
+class LeaderboardScreen extends ConsumerStatefulWidget {
   const LeaderboardScreen({super.key});
+
+  @override
+  ConsumerState<LeaderboardScreen> createState() => _LeaderboardScreenState();
+}
+
+class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
+  final Set<String> _expandedTeamIds = {};
 
   String _formatScoreToPar(int? score) {
     if (score == null) return '-';
     if (score == 0) return 'E';
     if (score > 0) return '+$score';
     return '$score';
+  }
+
+  int? _getCurrentRoundScore(LeaderboardStanding standing, int currentRound) {
+    switch (currentRound) {
+      case 1:
+        return standing.r1;
+      case 2:
+        return standing.r2;
+      case 3:
+        return standing.r3;
+      case 4:
+        return standing.r4;
+      default:
+        return standing.r1;
+    }
   }
 
   bool _isTied(
@@ -48,9 +71,10 @@ class LeaderboardScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final standingsAsync = ref.watch(leaderboardProvider);
+    final tournamentAsync = ref.watch(activeTournamentProvider);
 
     return ResponsiveLayout(
       appBar: AppBar(title: const Text('TOURNAMENT LEADERBOARD')),
@@ -69,6 +93,9 @@ class LeaderboardScreen extends ConsumerWidget {
                 );
               }
 
+              final tournament = tournamentAsync.value;
+              final currentRound = tournament?.currentRound ?? 1;
+
               final activeStandings = standings
                   .where((s) => s.status == 'ACTIVE')
                   .toList();
@@ -81,18 +108,12 @@ class LeaderboardScreen extends ConsumerWidget {
 
               final tableRows = <Widget>[];
 
-              // Column ratios: Rank, Team Name, R1, R2, R3, R4, To Par
-              const columnWidths = [1.0, 3.0, 1.0, 1.0, 1.0, 1.0, 1.2];
+              // Column ratios: Rank, Team Name, R[Current Round], To Par
+              const columnWidths = [1.0, 3.5, 1.2, 1.5];
 
               // Build ACTIVE section
               if (activeStandings.isNotEmpty) {
-                tableRows.add(
-                  _buildSectionHeader(
-                    'ACTIVE COMPETITORS',
-                    AppColors.primary,
-                    theme,
-                  ),
-                );
+                // ACTIVE COMPETITORS line is removed!
                 for (final standing in activeStandings) {
                   final tied = _isTied(standing, activeStandings);
                   final rankText = standing.rank != null
@@ -106,8 +127,29 @@ class LeaderboardScreen extends ConsumerWidget {
                       rankText: rankText,
                       columnWidths: columnWidths,
                       theme: theme,
+                      currentRound: currentRound,
+                      isExpanded: _expandedTeamIds.contains(standing.teamId),
+                      onTap: () {
+                        setState(() {
+                          if (_expandedTeamIds.contains(standing.teamId)) {
+                            _expandedTeamIds.remove(standing.teamId);
+                          } else {
+                            _expandedTeamIds.add(standing.teamId);
+                          }
+                        });
+                      },
                     ),
                   );
+
+                  if (_expandedTeamIds.contains(standing.teamId)) {
+                    tableRows.add(
+                      _buildExpandedRoundsRow(
+                        context: context,
+                        standing: standing,
+                        theme: theme,
+                      ),
+                    );
+                  }
                 }
               }
 
@@ -128,8 +170,29 @@ class LeaderboardScreen extends ConsumerWidget {
                       rankText: '-',
                       columnWidths: columnWidths,
                       theme: theme,
+                      currentRound: currentRound,
+                      isExpanded: _expandedTeamIds.contains(standing.teamId),
+                      onTap: () {
+                        setState(() {
+                          if (_expandedTeamIds.contains(standing.teamId)) {
+                            _expandedTeamIds.remove(standing.teamId);
+                          } else {
+                            _expandedTeamIds.add(standing.teamId);
+                          }
+                        });
+                      },
                     ),
                   );
+
+                  if (_expandedTeamIds.contains(standing.teamId)) {
+                    tableRows.add(
+                      _buildExpandedRoundsRow(
+                        context: context,
+                        standing: standing,
+                        theme: theme,
+                      ),
+                    );
+                  }
                 }
               }
 
@@ -150,8 +213,29 @@ class LeaderboardScreen extends ConsumerWidget {
                       rankText: '-',
                       columnWidths: columnWidths,
                       theme: theme,
+                      currentRound: currentRound,
+                      isExpanded: _expandedTeamIds.contains(standing.teamId),
+                      onTap: () {
+                        setState(() {
+                          if (_expandedTeamIds.contains(standing.teamId)) {
+                            _expandedTeamIds.remove(standing.teamId);
+                          } else {
+                            _expandedTeamIds.add(standing.teamId);
+                          }
+                        });
+                      },
                     ),
                   );
+
+                  if (_expandedTeamIds.contains(standing.teamId)) {
+                    tableRows.add(
+                      _buildExpandedRoundsRow(
+                        context: context,
+                        standing: standing,
+                        theme: theme,
+                      ),
+                    );
+                  }
                 }
               }
 
@@ -191,38 +275,30 @@ class LeaderboardScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: AppSpacing.md),
                           BbmTable(
-                            minWidth: 600.0,
+                            minWidth: 400.0,
                             columnWidths: columnWidths,
                             headers: [
-                              Text('Rank', style: theme.textTheme.labelLarge),
+                              Center(
+                                child: Text(
+                                  'Rank',
+                                  style: theme.textTheme.labelLarge,
+                                ),
+                              ),
                               Text(
                                 'Team Name',
                                 style: theme.textTheme.labelLarge,
                               ),
-                              Text(
-                                'R1',
-                                style: theme.textTheme.labelLarge,
-                                textAlign: TextAlign.center,
+                              Center(
+                                child: Text(
+                                  'R$currentRound',
+                                  style: theme.textTheme.labelLarge,
+                                ),
                               ),
-                              Text(
-                                'R2',
-                                style: theme.textTheme.labelLarge,
-                                textAlign: TextAlign.center,
-                              ),
-                              Text(
-                                'R3',
-                                style: theme.textTheme.labelLarge,
-                                textAlign: TextAlign.center,
-                              ),
-                              Text(
-                                'R4',
-                                style: theme.textTheme.labelLarge,
-                                textAlign: TextAlign.center,
-                              ),
-                              Text(
-                                'To Par',
-                                style: theme.textTheme.labelLarge,
-                                textAlign: TextAlign.center,
+                              Center(
+                                child: Text(
+                                  'To Par',
+                                  style: theme.textTheme.labelLarge,
+                                ),
                               ),
                             ],
                             rows: tableRows,
@@ -258,20 +334,18 @@ class LeaderboardScreen extends ConsumerWidget {
     required String rankText,
     required List<double> columnWidths,
     required ThemeData theme,
+    required int currentRound,
+    required bool isExpanded,
+    required VoidCallback onTap,
   }) {
     return BbmTableRow(
       columnWidths: columnWidths,
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ScorecardScreen(teamId: standing.teamId),
-          ),
-        );
-      },
+      backgroundColor: isExpanded
+          ? AppColors.primary.withValues(alpha: 0.05)
+          : null,
+      onTap: onTap,
       cells: [
-        Padding(
-          padding: const EdgeInsets.only(left: AppSpacing.md),
+        Center(
           child: Text(
             rankText,
             style: theme.textTheme.bodyMedium?.copyWith(
@@ -286,45 +360,127 @@ class LeaderboardScreen extends ConsumerWidget {
             color: AppColors.textPrimary,
           ),
         ),
-        Text(
-          _formatScoreToPar(standing.r1),
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: AppColors.textSecondary,
+        Center(
+          child: Text(
+            _formatScoreToPar(_getCurrentRoundScore(standing, currentRound)),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: AppColors.textSecondary,
+            ),
           ),
-          textAlign: TextAlign.center,
         ),
-        Text(
-          _formatScoreToPar(standing.r2),
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: AppColors.textSecondary,
+        Center(
+          child: Text(
+            _formatScoreToPar(standing.totalToPar),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: standing.totalToPar < 0
+                  ? AppColors.primaryHover
+                  : standing.totalToPar > 0
+                  ? AppColors.scoreBogeyBg
+                  : AppColors.textPrimary,
+            ),
           ),
-          textAlign: TextAlign.center,
         ),
+      ],
+    );
+  }
+
+  Widget _buildExpandedRoundsRow({
+    required BuildContext context,
+    required LeaderboardStanding standing,
+    required ThemeData theme,
+  }) {
+    return Container(
+      color: AppColors.alternateRow.withValues(alpha: 0.3),
+      padding: const EdgeInsets.symmetric(
+        vertical: AppSpacing.md,
+        horizontal: AppSpacing.md,
+      ),
+      child: Row(
+        children: [
+          const SizedBox(width: 40), // Spacer matching Rank column
+          Expanded(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildExpandedRoundCell(theme, 'R1', standing.r1),
+                _buildExpandedRoundCell(theme, 'R2', standing.r2),
+                _buildExpandedRoundCell(theme, 'R3', standing.r3),
+                _buildExpandedRoundCell(theme, 'R4', standing.r4),
+                // Scorecard shortcut button
+                IconButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            ScorecardScreen(teamId: standing.teamId),
+                      ),
+                    );
+                  },
+                  icon: const Icon(
+                    Icons.analytics_outlined,
+                    color: AppColors.primary,
+                  ),
+                  tooltip: 'View scorecard',
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExpandedRoundCell(ThemeData theme, String label, int? score) {
+    final hasScore = score != null;
+    final isUnderPar = hasScore && score < 0;
+    final isOverPar = hasScore && score > 0;
+
+    Color scoreColor = AppColors.textPrimary;
+    Color bgScoreColor = Colors.transparent;
+
+    if (isUnderPar) {
+      scoreColor = AppColors.primaryHover;
+      bgScoreColor = AppColors.primary.withValues(alpha: 0.08);
+    } else if (isOverPar) {
+      scoreColor = AppColors.scoreBogeyBg;
+      bgScoreColor = AppColors.scoreBogeyBg.withValues(alpha: 0.08);
+    }
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
         Text(
-          _formatScoreToPar(standing.r3),
-          style: theme.textTheme.bodyMedium?.copyWith(
+          label,
+          style: theme.textTheme.bodySmall?.copyWith(
             color: AppColors.textSecondary,
+            fontWeight: FontWeight.w500,
           ),
-          textAlign: TextAlign.center,
         ),
-        Text(
-          _formatScoreToPar(standing.r4),
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: AppColors.textSecondary,
+        const SizedBox(height: 4),
+        Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: 4,
           ),
-          textAlign: TextAlign.center,
-        ),
-        Text(
-          _formatScoreToPar(standing.totalToPar),
-          style: theme.textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: standing.totalToPar < 0
-                ? AppColors.primaryHover
-                : standing.totalToPar > 0
-                ? AppColors.scoreBogeyBg
-                : AppColors.textPrimary,
+          decoration: BoxDecoration(
+            color: bgScoreColor,
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(
+              color: bgScoreColor != Colors.transparent
+                  ? scoreColor.withValues(alpha: 0.2)
+                  : AppColors.border,
+              width: 1,
+            ),
           ),
-          textAlign: TextAlign.center,
+          child: Text(
+            _formatScoreToPar(score),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: scoreColor,
+            ),
+          ),
         ),
       ],
     );

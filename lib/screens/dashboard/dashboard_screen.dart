@@ -117,7 +117,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
     return ResponsiveLayout(
       appBar: AppBar(
-        title: const Text('BBM DASHBOARD'),
+        title: const Text('BEST BALL MADNESS'),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
