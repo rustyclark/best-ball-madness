@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/draft_providers.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
+import 'golfer_avatar.dart';
 
 enum GolferSortColumn { name, price, rank, average }
 
@@ -10,12 +11,14 @@ class GolferTable extends ConsumerStatefulWidget {
   final List<TournamentGolfer> golfers;
   final bool isLocked;
   final int? limit;
+  final TournamentGolfer? replacingGolfer;
 
   const GolferTable({
     super.key,
     required this.golfers,
     required this.isLocked,
     this.limit,
+    this.replacingGolfer,
   });
 
   @override
@@ -268,18 +271,36 @@ class _GolferTableState extends ConsumerState<GolferTable> {
                               .read(draftStateNotifierProvider.notifier)
                               .removeGolfer(golfer);
                         } else {
-                          final success = ref
-                              .read(draftStateNotifierProvider.notifier)
-                              .addGolfer(golfer);
-                          if (!success) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Roster is already full! Remove a golfer first.',
+                          if (widget.replacingGolfer != null) {
+                            final success = ref
+                                .read(draftStateNotifierProvider.notifier)
+                                .replaceGolfer(widget.replacingGolfer!, golfer);
+                            if (success) {
+                              Navigator.pop(context);
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Golfer is already on your roster!',
+                                  ),
+                                  duration: Duration(seconds: 2),
                                 ),
-                                duration: Duration(seconds: 2),
-                              ),
-                            );
+                              );
+                            }
+                          } else {
+                            final success = ref
+                                .read(draftStateNotifierProvider.notifier)
+                                .addGolfer(golfer);
+                            if (!success) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Roster is already full! Remove a golfer first.',
+                                  ),
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                            }
                           }
                         }
                       },
@@ -296,6 +317,8 @@ class _GolferTableState extends ConsumerState<GolferTable> {
                             ),
                     ),
                   ),
+                GolferAvatar(profile: golfer.profile, size: 60),
+                const SizedBox(width: AppSpacing.sm),
                 // Golfer details
                 Expanded(
                   child: Column(

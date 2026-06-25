@@ -9,11 +9,13 @@ import '../../widgets/responsive_layout.dart';
 class AvailableGolfersScreen extends ConsumerWidget {
   final List<TournamentGolfer> golfers;
   final bool isLocked;
+  final TournamentGolfer? replacingGolfer;
 
   const AvailableGolfersScreen({
     super.key,
     required this.golfers,
     required this.isLocked,
+    this.replacingGolfer,
   });
 
   @override
@@ -141,7 +143,11 @@ class AvailableGolfersScreen extends ConsumerWidget {
               ),
               const SizedBox(height: AppSpacing.lg),
               Expanded(
-                child: GolferTable(golfers: golfers, isLocked: isLocked),
+                child: GolferTable(
+                  golfers: golfers,
+                  isLocked: isLocked,
+                  replacingGolfer: replacingGolfer,
+                ),
               ),
             ],
           ),
