@@ -227,34 +227,33 @@ void main() {
       );
     }
 
-    testWidgets(
-      'Leaderboard groups and sorts correctly (ACTIVE -> CUT -> DQ)',
-      (WidgetTester tester) async {
-        await tester.pumpWidget(createLeaderboardWidget());
-        await tester.pumpAndSettle();
+    testWidgets('Leaderboard groups and sorts correctly (ACTIVE -> CUT -> DQ)', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createLeaderboardWidget());
+      await tester.pumpAndSettle();
 
-        // Verify that all section headers exist (except active competitors which was removed)
-        expect(find.text('ACTIVE COMPETITORS'), findsNothing);
-        expect(find.text('CUT / ELIMINATED'), findsOneWidget);
-        expect(find.text('DISQUALIFIED'), findsOneWidget);
+      // Verify that all section headers exist (except active competitors which was removed)
+      expect(find.text('ACTIVE COMPETITORS'), findsNothing);
+      expect(find.text('CUT / ELIMINATED'), findsOneWidget);
+      expect(find.text('DISQUALIFIED'), findsOneWidget);
 
-        // Verify team names render
-        expect(find.text('Team Active One'), findsOneWidget);
-        expect(find.text('Team Active Two'), findsOneWidget);
-        expect(find.text('Team Cut One'), findsOneWidget);
-        expect(find.text('Team DQ One'), findsOneWidget);
+      // Verify team names render
+      expect(find.text('Team Active One'), findsOneWidget);
+      expect(find.text('Team Active Two'), findsOneWidget);
+      expect(find.text('Team Cut One'), findsOneWidget);
+      expect(find.text('Team DQ One'), findsOneWidget);
 
-        // Verify scores format relative to par correctly
-        expect(find.text('-5'), findsOneWidget);
-        expect(find.text('-2'), findsOneWidget);
-        expect(find.text('+4'), findsOneWidget);
-        expect(find.text('+10'), findsOneWidget);
+      // Verify scores format relative to par correctly
+      expect(find.text('-5'), findsOneWidget);
+      expect(find.text('-2'), findsOneWidget);
+      expect(find.text('+4'), findsOneWidget);
+      expect(find.text('+10'), findsOneWidget);
 
-        // Verify ranks render correctly
-        expect(find.text('1'), findsOneWidget);
-        expect(find.text('2'), findsOneWidget);
-      },
-    );
+      // Verify ranks render correctly
+      expect(find.text('1'), findsOneWidget);
+      expect(find.text('2'), findsOneWidget);
+    });
 
     testWidgets('Tied ACTIVE teams display the T- prefix correctly', (
       WidgetTester tester,

@@ -279,7 +279,10 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                             columnWidths: columnWidths,
                             headers: [
                               Center(
-                                child: Text('Rank', style: theme.textTheme.labelLarge),
+                                child: Text(
+                                  'Rank',
+                                  style: theme.textTheme.labelLarge,
+                                ),
                               ),
                               Text(
                                 'Team Name',
@@ -373,8 +376,8 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
               color: standing.totalToPar < 0
                   ? AppColors.primaryHover
                   : standing.totalToPar > 0
-                      ? AppColors.scoreBogeyBg
-                      : AppColors.textPrimary,
+                  ? AppColors.scoreBogeyBg
+                  : AppColors.textPrimary,
             ),
           ),
         ),
@@ -410,7 +413,8 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => ScorecardScreen(teamId: standing.teamId),
+                        builder: (context) =>
+                            ScorecardScreen(teamId: standing.teamId),
                       ),
                     );
                   },
