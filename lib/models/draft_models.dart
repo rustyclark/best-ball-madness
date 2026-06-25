@@ -92,6 +92,9 @@ class GolferProfile {
     this.priorRoundsPlayed,
   });
 
+  String get headshotUrl =>
+      'https://a.espncdn.com/i/headshots/golf/players/full/$espnId.png';
+
   factory GolferProfile.fromJson(Map<String, dynamic> json) {
     return GolferProfile(
       id: json['id'] as String,
