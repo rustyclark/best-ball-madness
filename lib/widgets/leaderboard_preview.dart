@@ -181,20 +181,20 @@ class LeaderboardPreview extends ConsumerWidget {
                       headers: [
                         Center(
                           child: Text(
-                            'Rank',
+                            'POS',
                             style: theme.textTheme.labelMedium,
                           ),
                         ),
-                        Text('Team Name', style: theme.textTheme.labelMedium),
+                        Text('Team', style: theme.textTheme.labelMedium),
                         Center(
                           child: Text(
-                            'Round $currentRound',
+                            'RND $currentRound',
                             style: theme.textTheme.labelMedium,
                           ),
                         ),
                         Center(
                           child: Text(
-                            'To Par',
+                            'TOT',
                             style: theme.textTheme.labelMedium,
                           ),
                         ),

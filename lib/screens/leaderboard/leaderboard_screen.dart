@@ -283,23 +283,20 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                             headers: [
                               Center(
                                 child: Text(
-                                  'Rank',
+                                  'POS',
                                   style: theme.textTheme.labelLarge,
                                 ),
                               ),
-                              Text(
-                                'Team Name',
-                                style: theme.textTheme.labelLarge,
-                              ),
+                              Text('Team', style: theme.textTheme.labelLarge),
                               Center(
                                 child: Text(
-                                  'Round $currentRound',
+                                  'RND $currentRound',
                                   style: theme.textTheme.labelLarge,
                                 ),
                               ),
                               Center(
                                 child: Text(
-                                  'To Par',
+                                  'TOT',
                                   style: theme.textTheme.labelLarge,
                                 ),
                               ),
