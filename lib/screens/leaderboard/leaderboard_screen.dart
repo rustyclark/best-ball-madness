@@ -109,7 +109,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
               final tableRows = <Widget>[];
 
               // Column ratios: Rank, Team Name, R[Current Round], To Par
-              const columnWidths = [1.0, 3.5, 1.2, 1.5];
+              const columnWidths = [1.0, 2.8, 1.2, 1.5];
 
               // Build ACTIVE section
               if (activeStandings.isNotEmpty) {
@@ -275,7 +275,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                           ),
                           const SizedBox(height: AppSpacing.md),
                           BbmTable(
-                            minWidth: 400.0,
+                            minWidth: 360.0,
                             columnWidths: columnWidths,
                             headers: [
                               Center(
