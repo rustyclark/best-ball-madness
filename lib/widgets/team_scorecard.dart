@@ -268,6 +268,22 @@ class _TeamScorecardState extends ConsumerState<TeamScorecard> {
             .where((g) => team.golferIds.contains(g.id))
             .toList();
 
+        final isTeamLocked =
+            tournament == null ||
+            tournament.status == 'COMPLETED' ||
+            (tournament.lockTimeUtc != null &&
+                DateTime.now().toUtc().isAfter(tournament.lockTimeUtc!));
+        final hasEditableGolfer =
+            !isTeamLocked ||
+            (team.golferIds.isNotEmpty &&
+                teamGolfers.any((g) {
+                  if (g.teeTime == null) return true;
+                  final lockTime = g.teeTime!.subtract(
+                    const Duration(minutes: 15),
+                  );
+                  return DateTime.now().toUtc().isBefore(lockTime);
+                }));
+
         final content = Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -371,7 +387,8 @@ class _TeamScorecardState extends ConsumerState<TeamScorecard> {
                           ),
                           if (!isCompetitor &&
                               tournament != null &&
-                              tournament.status != 'COMPLETED')
+                              tournament.status != 'COMPLETED' &&
+                              hasEditableGolfer)
                             TextButton.icon(
                               icon: const Icon(
                                 Icons.edit_outlined,

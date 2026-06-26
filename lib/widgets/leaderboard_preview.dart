@@ -21,6 +21,21 @@ class LeaderboardPreview extends ConsumerWidget {
     return '$score';
   }
 
+  int? _getCurrentRoundScore(LeaderboardStanding standing, int currentRound) {
+    switch (currentRound) {
+      case 1:
+        return standing.r1;
+      case 2:
+        return standing.r2;
+      case 3:
+        return standing.r3;
+      case 4:
+        return standing.r4;
+      default:
+        return standing.r1;
+    }
+  }
+
   bool _isTied(
     LeaderboardStanding standing,
     List<LeaderboardStanding> activeStandings,
@@ -34,6 +49,7 @@ class LeaderboardPreview extends ConsumerWidget {
     final theme = Theme.of(context);
     final standingsAsync = ref.watch(leaderboardProvider);
     final userTeamAsync = ref.watch(userTeamProvider);
+    final tournamentAsync = ref.watch(activeTournamentProvider);
 
     final userTeam = userTeamAsync.value;
 
@@ -97,7 +113,10 @@ class LeaderboardPreview extends ConsumerWidget {
                   }
                 }
 
-                const columnWidths = [1.0, 4.0, 1.5];
+                final tournament = tournamentAsync.value;
+                final currentRound = tournament?.currentRound ?? 1;
+
+                const columnWidths = [1.0, 2.8, 1.2, 1.5];
 
                 final rows = <Widget>[
                   ...List.generate(top3.length, (index) {
@@ -115,6 +134,7 @@ class LeaderboardPreview extends ConsumerWidget {
                       rankText: rankText,
                       columnWidths: columnWidths,
                       theme: theme,
+                      currentRound: currentRound,
                       isHighlighted: isUserRow,
                       backgroundColor: index % 2 == 1
                           ? AppColors.alternateRow
@@ -143,6 +163,7 @@ class LeaderboardPreview extends ConsumerWidget {
                           : '-',
                       columnWidths: columnWidths,
                       theme: theme,
+                      currentRound: currentRound,
                       isHighlighted: true,
                       backgroundColor: AppColors.primary.withValues(
                         alpha: 0.05,
@@ -155,7 +176,7 @@ class LeaderboardPreview extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     BbmTable(
-                      minWidth: 300.0,
+                      minWidth: 340.0,
                       columnWidths: columnWidths,
                       headers: [
                         Padding(
@@ -168,7 +189,13 @@ class LeaderboardPreview extends ConsumerWidget {
                         Text('Team Name', style: theme.textTheme.labelMedium),
                         Center(
                           child: Text(
-                            'Score',
+                            'R$currentRound',
+                            style: theme.textTheme.labelMedium,
+                          ),
+                        ),
+                        Center(
+                          child: Text(
+                            'To Par',
                             style: theme.textTheme.labelMedium,
                           ),
                         ),
@@ -222,6 +249,7 @@ class LeaderboardPreview extends ConsumerWidget {
     required String rankText,
     required List<double> columnWidths,
     required ThemeData theme,
+    required int currentRound,
     required bool isHighlighted,
     required Color backgroundColor,
   }) {
@@ -261,7 +289,17 @@ class LeaderboardPreview extends ConsumerWidget {
           overflow: TextOverflow.ellipsis,
         ),
 
-        // Score
+        // R[Current Round]
+        Center(
+          child: Text(
+            _formatScoreToPar(_getCurrentRoundScore(standing, currentRound)),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ),
+
+        // To Par
         Center(
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),

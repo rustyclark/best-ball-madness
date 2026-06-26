@@ -276,6 +276,7 @@ final currentRoundProvider = Provider.autoDispose<int>((ref) {
 class SelectedRoundNotifier extends Notifier<int> {
   int? _manuallySelectedRound;
   String? _lastTournamentId;
+  int? _lastCurrentRound;
 
   @override
   int build() {
@@ -285,7 +286,14 @@ class SelectedRoundNotifier extends Notifier<int> {
     if (tournament != null && tournament.id != _lastTournamentId) {
       _lastTournamentId = tournament.id;
       _manuallySelectedRound = null;
+      _lastCurrentRound = current;
     }
+
+    if (_lastCurrentRound != null && current != _lastCurrentRound) {
+      _lastCurrentRound = current;
+      _manuallySelectedRound = null;
+    }
+    _lastCurrentRound ??= current;
 
     if (_manuallySelectedRound != null) {
       return _manuallySelectedRound!;

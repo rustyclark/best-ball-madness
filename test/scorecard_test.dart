@@ -509,5 +509,47 @@ void main() {
         expect(container.read(selectedRoundProvider), 1);
       },
     );
+
+    test(
+      'SelectedRoundNotifier resets manual round selection when current round advances',
+      () {
+        var currentMockRound = 2;
+        final container = ProviderContainer(
+          overrides: [
+            activeTournamentProvider.overrideWith((ref) {
+              return Tournament(
+                id: 't-1',
+                espnEventId: 'espn-1',
+                name: 'The Masters',
+                course: 'Augusta National',
+                location: 'Augusta, GA',
+                par: 72,
+                yards: 7400,
+                startDate: DateTime.now().subtract(const Duration(days: 1)),
+                endDate: DateTime.now().add(const Duration(days: 2)),
+                status: 'IN_PROGRESS',
+                currentRound: currentMockRound,
+              );
+            }),
+            userTeamProvider.overrideWith((ref) => mockTeam),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        // Initially should match active tournament currentRound which is 2
+        expect(container.read(selectedRoundProvider), 2);
+
+        // Manually select round 1
+        container.read(selectedRoundProvider.notifier).setRound(1);
+        expect(container.read(selectedRoundProvider), 1);
+
+        // Update mock to advance to round 3 and invalidate activeTournamentProvider
+        currentMockRound = 3;
+        container.invalidate(activeTournamentProvider);
+
+        // Read again, should reset manual selection and default to new current round (3)
+        expect(container.read(selectedRoundProvider), 3);
+      },
+    );
   });
 }

@@ -130,6 +130,22 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           return !isLocked;
         });
 
+    // Check if user has any editable golfers (draft is open or roster has at least one unlocked golfer)
+    final showEditBanner =
+        activeTournament != null &&
+        activeTournament.status != 'COMPLETED' &&
+        (!isTeamLocked ||
+            (isRosterSaved &&
+                golfers.where((g) => userTeam.golferIds.contains(g.id)).any((
+                  g,
+                ) {
+                  if (g.teeTime == null) return true;
+                  final lockTime = g.teeTime!.subtract(
+                    const Duration(minutes: 15),
+                  );
+                  return DateTime.now().toUtc().isBefore(lockTime);
+                })));
+
     return ResponsiveLayout(
       appBar: AppBar(
         title: const Text('BEST BALL MADNESS'),
@@ -197,8 +213,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ],
 
               // Lock Info Banner (informational post-lock/during draft)
-              if (activeTournament != null &&
-                  activeTournament.status != 'COMPLETED') ...[
+              if (showEditBanner) ...[
                 _buildBanner(
                   text: isTeamLocked
                       ? 'Tournament has started! You can still edit golfers who have not teed off yet.'
