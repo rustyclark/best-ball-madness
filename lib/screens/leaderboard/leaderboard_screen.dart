@@ -242,7 +242,10 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
               return SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.md),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                    vertical: AppSpacing.md,
+                  ),
                   child: BbmCard(
                     padding: EdgeInsets.zero,
                     child: Padding(
@@ -290,7 +293,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                               ),
                               Center(
                                 child: Text(
-                                  'R$currentRound',
+                                  'Round $currentRound',
                                   style: theme.textTheme.labelLarge,
                                 ),
                               ),

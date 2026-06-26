@@ -179,8 +179,7 @@ class LeaderboardPreview extends ConsumerWidget {
                       minWidth: 340.0,
                       columnWidths: columnWidths,
                       headers: [
-                        Padding(
-                          padding: const EdgeInsets.only(left: AppSpacing.md),
+                        Center(
                           child: Text(
                             'Rank',
                             style: theme.textTheme.labelMedium,
@@ -189,7 +188,7 @@ class LeaderboardPreview extends ConsumerWidget {
                         Text('Team Name', style: theme.textTheme.labelMedium),
                         Center(
                           child: Text(
-                            'R$currentRound',
+                            'Round $currentRound',
                             style: theme.textTheme.labelMedium,
                           ),
                         ),
@@ -266,8 +265,7 @@ class LeaderboardPreview extends ConsumerWidget {
       },
       cells: [
         // Rank
-        Padding(
-          padding: const EdgeInsets.only(left: AppSpacing.md),
+        Center(
           child: Text(
             rankText,
             style: theme.textTheme.bodyMedium?.copyWith(

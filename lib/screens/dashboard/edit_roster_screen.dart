@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../theme/spacing.dart';
 import '../../widgets/draft_panel.dart';
 import '../../widgets/responsive_layout.dart';
 
@@ -19,7 +20,10 @@ class EditRosterScreen extends ConsumerWidget {
       ),
       child: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.md,
+          ),
           child: DraftPanel(
             isLocked: false,
             onSaveSuccess: () {
