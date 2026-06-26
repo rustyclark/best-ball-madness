@@ -551,5 +551,19 @@ void main() {
         expect(container.read(selectedRoundProvider), 3);
       },
     );
+
+    testWidgets('Renders the PAR row with hole pars and total par', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createScorecardWidget());
+      await tester.pumpAndSettle();
+
+      // Check left column displays PAR label and total par 72
+      expect(find.text('PAR'), findsOneWidget);
+      expect(find.text('72'), findsOneWidget);
+
+      // Check right column displays hole par
+      expect(find.text('4'), findsAtLeast(1));
+    });
   });
 }
