@@ -313,7 +313,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             showBanners: false,
                           ),
                           const SizedBox(height: AppSpacing.md),
-                          if (activeTournament.status != 'COMPLETED') ...[
+                          if (activeTournament.status != 'COMPLETED' &&
+                              showEditBanner) ...[
                             _buildEditRosterCard(context, theme, isRosterSaved),
                             const SizedBox(height: AppSpacing.md),
                           ],
