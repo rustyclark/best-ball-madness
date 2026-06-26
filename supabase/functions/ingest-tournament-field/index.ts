@@ -50,7 +50,7 @@ serve(async (req) => {
       status = "COMPLETED"
     }
 
-    const current_round = event.status?.period ?? 1
+    const current_round = event.competitions?.[0]?.status?.period ?? event.status?.period ?? 1
 
     // Course Details
     const courseData = event.courses?.[0]

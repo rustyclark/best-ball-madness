@@ -85,7 +85,7 @@ serve(async (req) => {
       status = "COMPLETED"
     }
 
-    const currentRound = event.status?.period ?? 1
+    const currentRound = event.competitions?.[0]?.status?.period ?? event.status?.period ?? 1
 
     await supabaseClient
       .from('tournaments')
