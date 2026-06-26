@@ -154,7 +154,7 @@ class _SetupTeamScreenState extends ConsumerState<SetupTeamScreen> {
       child: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
