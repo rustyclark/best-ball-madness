@@ -242,7 +242,10 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
               return SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.md),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                    vertical: AppSpacing.md,
+                  ),
                   child: BbmCard(
                     padding: EdgeInsets.zero,
                     child: Padding(
@@ -280,23 +283,20 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                             headers: [
                               Center(
                                 child: Text(
-                                  'Rank',
+                                  'POS',
                                   style: theme.textTheme.labelLarge,
                                 ),
                               ),
-                              Text(
-                                'Team Name',
-                                style: theme.textTheme.labelLarge,
-                              ),
+                              Text('Team', style: theme.textTheme.labelLarge),
                               Center(
                                 child: Text(
-                                  'R$currentRound',
+                                  'RND $currentRound',
                                   style: theme.textTheme.labelLarge,
                                 ),
                               ),
                               Center(
                                 child: Text(
-                                  'To Par',
+                                  'TOT',
                                   style: theme.textTheme.labelLarge,
                                 ),
                               ),

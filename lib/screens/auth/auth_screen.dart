@@ -167,7 +167,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       child: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [

@@ -16,7 +16,7 @@ class MissingEnvScreen extends StatelessWidget {
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -54,7 +54,10 @@ class MissingEnvScreen extends StatelessWidget {
                   const SizedBox(height: AppSpacing.lg),
 
                   BbmCard(
-                    padding: const EdgeInsets.all(AppSpacing.lg),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: AppSpacing.lg,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
