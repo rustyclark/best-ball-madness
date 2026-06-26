@@ -633,5 +633,147 @@ void main() {
         expect(find.text('1 / 4'), findsOneWidget);
       },
     );
+
+    testWidgets(
+      'DashboardScreen hides the EDIT ROSTER button when all golfers are locked (teed off)',
+      (WidgetTester tester) async {
+        tester.view.physicalSize = const Size(1000, 2000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        // Tournament is IN_PROGRESS and locked
+        mockTournament = Tournament(
+          id: 't-1',
+          espnEventId: 'espn-1',
+          name: 'The Masters',
+          course: 'Augusta National',
+          location: 'Augusta, GA',
+          par: 72,
+          yards: 7400,
+          startDate: DateTime.now().subtract(const Duration(days: 1)),
+          endDate: DateTime.now().add(const Duration(days: 2)),
+          status: 'IN_PROGRESS',
+          currentRound: 1,
+          lockTimeUtc: DateTime.now()
+              .subtract(const Duration(hours: 2))
+              .toUtc(), // Locked
+        );
+
+        // 4 golfers, all of them have teed off in the past (so they are locked)
+        final lockedTeeTime = DateTime.now().subtract(const Duration(hours: 1));
+        mockGolfers = [
+          TournamentGolfer(
+            id: 'tg-1',
+            tournamentId: 't-1',
+            golferProfileId: 'gp-1',
+            price: 25.0,
+            status: 'ACTIVE',
+            profile: GolferProfile(
+              id: 'gp-1',
+              espnId: '1',
+              name: 'Scottie Scheffler',
+              worldRank: 1,
+              scoringAvg: 68.2,
+            ),
+            teeTime: lockedTeeTime,
+          ),
+          TournamentGolfer(
+            id: 'tg-2',
+            tournamentId: 't-1',
+            golferProfileId: 'gp-2',
+            price: 25.0,
+            status: 'ACTIVE',
+            profile: GolferProfile(
+              id: 'gp-2',
+              espnId: '2',
+              name: 'Rory McIlroy',
+              worldRank: 2,
+              scoringAvg: 69.0,
+            ),
+            teeTime: lockedTeeTime,
+          ),
+          TournamentGolfer(
+            id: 'tg-3',
+            tournamentId: 't-1',
+            golferProfileId: 'gp-3',
+            price: 25.0,
+            status: 'ACTIVE',
+            profile: GolferProfile(
+              id: 'gp-3',
+              espnId: '3',
+              name: 'Jon Rahm',
+              worldRank: 3,
+              scoringAvg: 69.5,
+            ),
+            teeTime: lockedTeeTime,
+          ),
+          TournamentGolfer(
+            id: 'tg-4',
+            tournamentId: 't-1',
+            golferProfileId: 'gp-4',
+            price: 25.0,
+            status: 'ACTIVE',
+            profile: GolferProfile(
+              id: 'gp-4',
+              espnId: '4',
+              name: 'Cameron Young',
+              worldRank: 10,
+              scoringAvg: 70.0,
+            ),
+            teeTime: lockedTeeTime,
+          ),
+        ];
+
+        fakeSupabase.mockData['teams'] = [
+          {
+            'id': 'team-1',
+            'user_id': 'mock-user-id',
+            'tournament_id': 't-1',
+            'status': 'ACTIVE',
+          },
+        ];
+        fakeSupabase.mockData['team_golfers'] = [
+          {'tournament_golfer_id': 'tg-1'},
+          {'tournament_golfer_id': 'tg-2'},
+          {'tournament_golfer_id': 'tg-3'},
+          {'tournament_golfer_id': 'tg-4'},
+        ];
+
+        fakeSupabase.mockData['users'] = [
+          {
+            'id': 'mock-user-id',
+            'email': 'testuser@example.com',
+            'team_name': 'Locked Masters',
+            'created_at': DateTime.now().toIso8601String(),
+          },
+        ];
+
+        final mockUser = User(
+          id: 'mock-user-id',
+          appMetadata: {},
+          userMetadata: {},
+          aud: 'authenticated',
+          createdAt: DateTime.now().toIso8601String(),
+          email: 'testuser@example.com',
+        );
+        fakeSupabase.fakeAuth.emitSession(
+          Session(
+            accessToken: 'mock-access-token',
+            tokenType: 'bearer',
+            user: mockUser,
+          ),
+        );
+
+        await tester.pumpWidget(buildTestApp());
+        await tester.pumpAndSettle();
+
+        // Dashboard should not contain "EDIT ROSTER" or "DRAFT TEAM" text
+        expect(find.text('EDIT ROSTER'), findsNothing);
+        expect(find.text('DRAFT TEAM'), findsNothing);
+      },
+    );
   });
 }
