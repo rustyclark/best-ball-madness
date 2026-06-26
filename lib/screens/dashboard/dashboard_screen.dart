@@ -159,7 +159,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       ),
       child: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.lg,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -313,7 +316,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             showBanners: false,
                           ),
                           const SizedBox(height: AppSpacing.md),
-                          if (activeTournament.status != 'COMPLETED') ...[
+                          if (activeTournament.status != 'COMPLETED' &&
+                              showEditBanner) ...[
                             _buildEditRosterCard(context, theme, isRosterSaved),
                             const SizedBox(height: AppSpacing.md),
                           ],

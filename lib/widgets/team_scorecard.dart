@@ -456,6 +456,7 @@ class _TeamScorecardState extends ConsumerState<TeamScorecard> {
                                       CrossAxisAlignment.stretch,
                                   children: [
                                     _buildLeftHeader(theme),
+                                    _buildLeftParRow(theme, tournament?.par),
                                     ...List.generate(
                                       (!isCompetitor ||
                                               team.userId == currentUserId)
@@ -579,6 +580,11 @@ class _TeamScorecardState extends ConsumerState<TeamScorecard> {
                                             CrossAxisAlignment.stretch,
                                         children: [
                                           _buildRightHeader(theme),
+                                          _buildRightParRow(
+                                            theme,
+                                            scores,
+                                            teamScores,
+                                          ),
                                           ...List.generate(
                                             (!isCompetitor ||
                                                     team.userId ==
@@ -846,6 +852,77 @@ class _TeamScorecardState extends ConsumerState<TeamScorecard> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildLeftParRow(ThemeData theme, int? totalPar) {
+    return Container(
+      height: 36.0,
+      decoration: const BoxDecoration(
+        color: AppColors.cardBg,
+        border: Border(bottom: BorderSide(color: AppColors.border, width: 1)),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 120.0,
+            child: Padding(
+              padding: const EdgeInsets.only(left: AppSpacing.md),
+              child: Text(
+                'PAR',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ),
+          ),
+          SizedBox(
+            width: 60.0,
+            child: Center(
+              child: Text(
+                totalPar != null ? '$totalPar' : '-',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRightParRow(
+    ThemeData theme,
+    List<HoleScore> allScores,
+    List<TeamHoleScore> teamScores,
+  ) {
+    return Container(
+      height: 36.0,
+      decoration: const BoxDecoration(
+        color: AppColors.cardBg,
+        border: Border(bottom: BorderSide(color: AppColors.border, width: 1)),
+      ),
+      child: Row(
+        children: List.generate(18, (i) {
+          final holeNum = i + 1;
+          final par = _getParForHole(holeNum, allScores, teamScores);
+          return SizedBox(
+            width: 40.0,
+            child: Center(
+              child: Text(
+                '$par',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ),
+          );
+        }),
       ),
     );
   }
