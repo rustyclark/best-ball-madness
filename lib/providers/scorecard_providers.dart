@@ -292,9 +292,8 @@ class SelectedRoundNotifier extends Notifier<int> {
     if (_lastCurrentRound != null && current != _lastCurrentRound) {
       _lastCurrentRound = current;
       _manuallySelectedRound = null;
-    } else if (_lastCurrentRound == null) {
-      _lastCurrentRound = current;
     }
+    _lastCurrentRound ??= current;
 
     if (_manuallySelectedRound != null) {
       return _manuallySelectedRound!;
