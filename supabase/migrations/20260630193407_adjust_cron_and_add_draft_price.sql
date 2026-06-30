@@ -38,11 +38,17 @@ SELECT cron.schedule(
 ALTER TABLE public.team_golfers
 ADD COLUMN price_at_draft NUMERIC NULL;
 
+-- Temporarily disable lock trigger to allow historical data updates on completed tournaments
+ALTER TABLE public.team_golfers DISABLE TRIGGER trg_team_golfers_lock;
+
 -- Populate existing price_at_draft values with the current golfer price
 UPDATE public.team_golfers tg
 SET price_at_draft = tgf.price
 FROM public.tournament_golfers tgf
 WHERE tg.tournament_golfer_id = tgf.id;
+
+-- Re-enable lock trigger
+ALTER TABLE public.team_golfers ENABLE TRIGGER trg_team_golfers_lock;
 
 -- Create function to populate price_at_draft automatically
 CREATE OR REPLACE FUNCTION public.populate_price_at_draft()
