@@ -18,7 +18,7 @@ Deno.test("Pricing Helper - Zero Data Default", () => {
     prior_scoring_avg: null,
   };
 
-  const result = computeGolferPrice(zeroDataGolfer, 68.0, 74.0);
+  const result = computeGolferPrice(zeroDataGolfer, 68.0, 74.0, 0.5);
   assertEquals(result.isZeroData, true);
   assertEquals(result.price, 12.00);
 });
@@ -40,7 +40,7 @@ Deno.test("Pricing Helper - Unranked Player Default", () => {
     prior_scoring_avg: 71.5,
   };
 
-  const result = computeGolferPrice(unrankedGolfer, 68.0, 74.0);
+  const result = computeGolferPrice(unrankedGolfer, 68.0, 74.0, 0.0);
   assertEquals(result.isZeroData, false);
   // Unranked should be treated as world rank 100.
   // We check that price is computed within valid range
@@ -64,7 +64,7 @@ Deno.test("Pricing Helper - Blended Model logic", () => {
     prior_scoring_avg: 69.0,
   };
 
-  const result = computeGolferPrice(golfer, 68.0, 74.0);
+  const result = computeGolferPrice(golfer, 68.0, 74.0, 0.99);
   assertEquals(result.isZeroData, false);
   assertEquals(result.price >= 12.00 && result.price <= 38.00, true);
   // High rank, low scoring average, wins -> price should be at the higher end
@@ -88,7 +88,7 @@ Deno.test("Pricing Helper - Denominator Guards", () => {
     prior_scoring_avg: 73.0,
   };
 
-  const result = computeGolferPrice(weirdGolfer, 68.0, 74.0);
+  const result = computeGolferPrice(weirdGolfer, 68.0, 74.0, 0.90);
   assertEquals(result.isZeroData, false);
   assertEquals(result.price >= 12.00 && result.price <= 38.00, true);
 });

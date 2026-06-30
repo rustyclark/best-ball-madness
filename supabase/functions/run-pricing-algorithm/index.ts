@@ -101,13 +101,37 @@ serve(async (req) => {
       maxAvg = Math.max(...blends)
     }
 
-    // 4. Calculate prices and update
+    // 4. Sort and compute relative world rank percentile scores for the active field to handle weaker fields dynamically
+    const sortedGolfers = [...tgGolfers].sort((a, b) => {
+      const rankA = (a.golfer_profiles as any)?.world_rank ?? 9999
+      const rankB = (b.golfer_profiles as any)?.world_rank ?? 9999
+      return rankA - rankB
+    })
+
+    const fieldSize = sortedGolfers.length
+    const rankMap = new Map<string, number>()
+
+    let currentRank = 0
+    let prevVal = -1
+    for (let i = 0; i < fieldSize; i++) {
+      const tg = sortedGolfers[i]
+      const val = (tg.golfer_profiles as any)?.world_rank ?? 9999
+      if (val !== prevVal) {
+        currentRank = i
+        prevVal = val
+      }
+      const relativeScore = fieldSize > 1 ? (fieldSize - 1 - currentRank) / (fieldSize - 1) : 1.0
+      rankMap.set(tg.id, relativeScore)
+    }
+
+    // 5. Calculate prices and update
     const priceUpdates = []
     for (const tg of tgGolfers) {
       const golfer = tg.golfer_profiles as any
       if (!golfer) continue
 
-      const { price } = computeGolferPrice(golfer, minAvg, maxAvg)
+      const relativeWorldRankScore = rankMap.get(tg.id) ?? 0.0
+      const { price } = computeGolferPrice(golfer, minAvg, maxAvg, relativeWorldRankScore)
 
       const { error: updateError } = await supabaseClient
         .from('tournament_golfers')

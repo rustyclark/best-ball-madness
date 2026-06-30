@@ -16,6 +16,7 @@ export function computeGolferPrice(
   },
   minAvg: number,
   maxAvg: number,
+  relativeWorldRankScore: number,
   N = 8
 ): { isZeroData: boolean; price: number } {
   const currentEvents = golfer.events_played ?? 0;
@@ -53,7 +54,7 @@ export function computeGolferPrice(
   const avgRange = maxAvg - minAvg;
 
   const scoring_avg_score = avgRange > 0 ? clamp((maxAvg - scoringAvg) / avgRange, 0, 1) : 0.5;
-  const world_rank_score = clamp((100 - (golfer.world_rank ?? 100)) / 100, 0, 1);
+  const world_rank_score = clamp(relativeWorldRankScore, 0, 1);
   const wins_score = clamp(winsRate / 0.15, 0, 1);
   const top10_score = clamp(top10Rate / 0.45, 0, 1);
   const cuts_score = clamp(cutsRate, 0, 1);
