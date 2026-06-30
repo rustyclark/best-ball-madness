@@ -189,4 +189,42 @@ void main() {
       expect(profile.priorRoundsPlayed, 20);
     },
   );
+
+  group('Weekly Transition Time Logic Tests', () {
+    test('Monday is before transition', () {
+      // Monday June 29, 2026 at 12:00 PM UTC
+      final time = DateTime.utc(2026, 6, 29, 12, 0);
+      expect(isBeforeWeeklyTransition(time), isTrue);
+    });
+
+    test(
+      'Tuesday 5:00 AM EST (10:00 AM UTC in June DST) is before transition',
+      () {
+        // Tuesday June 30, 2026 at 9:59 AM UTC
+        final time = DateTime.utc(2026, 6, 30, 9, 59);
+        expect(isBeforeWeeklyTransition(time), isTrue);
+      },
+    );
+
+    test(
+      'Tuesday 7:00 AM EST (11:00 AM UTC in June DST) is after transition',
+      () {
+        // Tuesday June 30, 2026 at 11:01 AM UTC
+        final time = DateTime.utc(2026, 6, 30, 11, 1);
+        expect(isBeforeWeeklyTransition(time), isFalse);
+      },
+    );
+
+    test('Wednesday is after transition', () {
+      // Wednesday July 1, 2026 at 12:00 PM UTC
+      final time = DateTime.utc(2026, 7, 1, 12, 0);
+      expect(isBeforeWeeklyTransition(time), isFalse);
+    });
+
+    test('Sunday is after transition', () {
+      // Sunday July 5, 2026 at 6:00 PM UTC
+      final time = DateTime.utc(2026, 7, 5, 18, 0);
+      expect(isBeforeWeeklyTransition(time), isFalse);
+    });
+  });
 }

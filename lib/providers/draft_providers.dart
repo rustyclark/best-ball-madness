@@ -4,7 +4,51 @@ import 'auth_providers.dart';
 import '../models/draft_models.dart';
 export '../models/draft_models.dart';
 
-/// Fetches the active tournament (not COMPLETED).
+/// Checks if the current time is before the weekly transition (Tuesday 6:00 AM EST).
+/// Returns true if we are before Tuesday 6:00 AM EST of the current week.
+bool isBeforeWeeklyTransition([DateTime? mockTime]) {
+  final nowUtc = (mockTime ?? DateTime.now()).toUtc();
+  // weekday is 1 (Monday) to 7 (Sunday).
+  final daysToTuesday = 2 - nowUtc.weekday;
+
+  // US Daylight Saving Time (Eastern Time) details:
+  // Starts second Sunday of March, ends first Sunday of November.
+  // In EDT, 6:00 AM ET is 10:00 AM UTC.
+  // In EST, 6:00 AM ET is 11:00 AM UTC.
+  final isDst = _isUSDaylightSaving(nowUtc);
+  final transitionHour = isDst ? 10 : 11;
+
+  final transitionTuesday = DateTime.utc(
+    nowUtc.year,
+    nowUtc.month,
+    nowUtc.day,
+    transitionHour,
+    0,
+  ).add(Duration(days: daysToTuesday));
+
+  return nowUtc.isBefore(transitionTuesday);
+}
+
+bool _isUSDaylightSaving(DateTime time) {
+  if (time.month < 3 || time.month > 11) return false;
+  if (time.month > 3 && time.month < 11) return true;
+
+  if (time.month == 3) {
+    final firstWeekday = DateTime.utc(time.year, 3, 1).weekday;
+    final secondSunday = 1 + (7 - firstWeekday + 7) % 7 + 7;
+    return time.day >= secondSunday;
+  }
+
+  if (time.month == 11) {
+    final firstWeekday = DateTime.utc(time.year, 11, 1).weekday;
+    final firstSunday = 1 + (7 - firstWeekday) % 7;
+    return time.day < firstSunday;
+  }
+
+  return false;
+}
+
+/// Fetches the active tournament, taking weekly transition into account.
 final activeTournamentProvider = FutureProvider.autoDispose<Tournament?>((
   ref,
 ) async {
@@ -12,18 +56,34 @@ final activeTournamentProvider = FutureProvider.autoDispose<Tournament?>((
   final response = await client
       .from('tournaments')
       .select()
-      .neq('status', 'COMPLETED')
       .order('start_date', ascending: false)
-      .limit(1)
-      .maybeSingle();
+      .limit(2);
 
-  if (response == null) {
+  final list = (response as List)
+      .map((json) => Tournament.fromJson(json as Map<String, dynamic>))
+      .toList();
+
+  if (list.isEmpty) {
     return null;
   }
-  final tournament = Tournament.fromJson(response);
+
+  final Tournament activeTournament;
+  if (isBeforeWeeklyTransition()) {
+    // Before Tuesday 6am EST, show the completed/in-progress tournament from last week (not scheduled yet)
+    Tournament? found;
+    try {
+      found = list.firstWhere((t) => t.status != 'SCHEDULED');
+    } catch (_) {
+      found = list.first;
+    }
+    activeTournament = found;
+  } else {
+    // After Tuesday 6am EST, show the latest tournament (scheduled or in-progress)
+    activeTournament = list.first;
+  }
 
   // Set up realtime channel subscription to listen for updates to this active tournament
-  final channel = client.channel('active-tournament-${tournament.id}');
+  final channel = client.channel('active-tournament-${activeTournament.id}');
   channel
       .onPostgresChanges(
         event: PostgresChangeEvent.all,
@@ -33,7 +93,7 @@ final activeTournamentProvider = FutureProvider.autoDispose<Tournament?>((
           final record = payload.newRecord.isNotEmpty
               ? payload.newRecord
               : payload.oldRecord;
-          if (record.isNotEmpty && record['id'] == tournament.id) {
+          if (record.isNotEmpty && record['id'] == activeTournament.id) {
             ref.invalidateSelf();
           }
         },
@@ -44,7 +104,26 @@ final activeTournamentProvider = FutureProvider.autoDispose<Tournament?>((
     await client.removeChannel(channel);
   });
 
-  return tournament;
+  return activeTournament;
+});
+
+/// Fetches the next scheduled tournament (status = SCHEDULED).
+final nextTournamentProvider = FutureProvider.autoDispose<Tournament?>((
+  ref,
+) async {
+  final client = ref.watch(supabaseClientProvider);
+  final response = await client
+      .from('tournaments')
+      .select()
+      .eq('status', 'SCHEDULED')
+      .order('start_date', ascending: false)
+      .limit(1)
+      .maybeSingle();
+
+  if (response == null) {
+    return null;
+  }
+  return Tournament.fromJson(response);
 });
 
 /// Fetches the golfer list for the active tournament.
@@ -97,14 +176,24 @@ final userTeamProvider = FutureProvider.autoDispose<UserTeam?>((ref) async {
 
   final golfersResponse = await client
       .from('team_golfers')
-      .select('tournament_golfer_id')
+      .select('tournament_golfer_id, price_at_draft')
       .eq('team_id', teamId);
 
-  final golferIds = (golfersResponse as List)
+  final list = golfersResponse as List;
+  final golferIds = list
       .map((row) => row['tournament_golfer_id'] as String)
       .toList();
 
-  return UserTeam.fromJson(teamResponse, golferIds);
+  final pricesAtDraft = <String, double>{};
+  for (final row in list) {
+    final id = row['tournament_golfer_id'] as String;
+    final priceVal = row['price_at_draft'];
+    if (priceVal != null) {
+      pricesAtDraft[id] = (priceVal as num).toDouble();
+    }
+  }
+
+  return UserTeam.fromJson(teamResponse, golferIds, pricesAtDraft);
 });
 
 /// Notifier managing the local client-side draft selection state.
