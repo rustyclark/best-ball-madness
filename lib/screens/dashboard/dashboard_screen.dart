@@ -57,6 +57,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final theme = Theme.of(context);
     final profileAsync = ref.watch(userProfileProvider);
     final tournamentAsync = ref.watch(activeTournamentProvider);
+    final nextTournamentAsync = ref.watch(nextTournamentProvider);
     final golferListAsync = ref.watch(golferListProvider);
     final userTeamAsync = ref.watch(userTeamProvider);
     final selectedRound = ref.watch(selectedRoundProvider);
@@ -64,6 +65,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       teamGolfersHoleScoresProvider(selectedRound),
     );
     final teeTimesAsync = ref.watch(teamGolfersTeeTimesProvider(selectedRound));
+
+    final nextTournament = nextTournamentAsync.value;
 
     // Sync saved team to local draft selection state on first load
     if (!_hasInitializedRoster) {
@@ -107,6 +110,31 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         userTeamScore = matches.first.totalToPar;
       }
     }
+
+    // Determine warning banner flags
+    final isBeforeTransition = isBeforeWeeklyTransition();
+    final showIncompleteRosterBanner =
+        isRosterSaved && userTeam.golferIds.length < 4 && !isTeamLocked;
+
+    final teamGolfers = golfers
+        .where((g) => userTeam?.golferIds.contains(g.id) ?? false)
+        .toList();
+    final double currentTotalCost = teamGolfers.fold(
+      0.0,
+      (sum, g) => sum + g.price,
+    );
+
+    final hasPriceChanges =
+        isRosterSaved &&
+        teamGolfers.any((g) {
+          final priceAtDraft = userTeam.pricesAtDraft[g.id];
+          return priceAtDraft != null && priceAtDraft != g.price;
+        });
+
+    final isOverBudget = isRosterSaved && currentTotalCost > 100.0;
+    final showOverBudgetBanner = isOverBudget && !isTeamLocked;
+    final showPriceChangeBanner =
+        hasPriceChanges && !isOverBudget && !isTeamLocked;
 
     // Check if any golfer on user's SAVED roster is WD and can still be edited (not locked)
     final showWdBanner =
@@ -211,6 +239,56 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   bgColor: AppColors.statusSuspendedBg,
                   textColor: AppColors.statusSuspendedText,
                   icon: Icons.thunderstorm_outlined,
+                ),
+                const SizedBox(height: AppSpacing.md),
+              ],
+
+              // Next Week's Tournament Teaser Banner
+              if (activeTournament?.status == 'COMPLETED' &&
+                  isBeforeTransition &&
+                  nextTournament != null) ...[
+                _buildBanner(
+                  text:
+                      "NEXT TOURNAMENT: ${nextTournament.name} (${nextTournament.location}) will open on Tuesday at 6:00 AM EST.",
+                  bgColor: AppColors.statusScheduledBg,
+                  textColor: AppColors.statusScheduledText,
+                  icon: Icons.upcoming_outlined,
+                ),
+                const SizedBox(height: AppSpacing.md),
+              ],
+
+              // Incomplete Roster Warning Banner
+              if (showIncompleteRosterBanner) ...[
+                _buildBanner(
+                  text:
+                      "CRITICAL: A golfer on your team is no longer in the field. Roster is incomplete (${userTeam.golferIds.length}/4)! Edit your roster before lock time.",
+                  bgColor: AppColors.scoreBogeyBg,
+                  textColor: AppColors.scoreBogeyBg,
+                  icon: Icons.error_outline_rounded,
+                ),
+                const SizedBox(height: AppSpacing.md),
+              ],
+
+              // Over Budget Warning Banner
+              if (showOverBudgetBanner) ...[
+                _buildBanner(
+                  text:
+                      "CRITICAL: Due to price changes, your roster is over budget (\$${currentTotalCost.toStringAsFixed(2)}/\$100). You must update your roster before lock time or you will be disqualified!",
+                  bgColor: AppColors.scoreBogeyBg,
+                  textColor: AppColors.scoreBogeyBg,
+                  icon: Icons.gpp_bad_outlined,
+                ),
+                const SizedBox(height: AppSpacing.md),
+              ],
+
+              // Price Change Notice Banner
+              if (showPriceChangeBanner) ...[
+                _buildBanner(
+                  text:
+                      "NOTICE: Some golfers on your roster have had price changes since you drafted them. Your new team cost is \$${currentTotalCost.toStringAsFixed(2)}.",
+                  bgColor: AppColors.primary,
+                  textColor: AppColors.primary,
+                  icon: Icons.info_outline_rounded,
                 ),
                 const SizedBox(height: AppSpacing.md),
               ],

@@ -179,6 +179,7 @@ class UserTeam {
   final String tournamentId;
   final String status;
   final List<String> golferIds;
+  final Map<String, double> pricesAtDraft;
   final String? teamName;
 
   UserTeam({
@@ -187,10 +188,15 @@ class UserTeam {
     required this.tournamentId,
     required this.status,
     required this.golferIds,
+    this.pricesAtDraft = const {},
     this.teamName,
   });
 
-  factory UserTeam.fromJson(Map<String, dynamic> json, List<String> golferIds) {
+  factory UserTeam.fromJson(
+    Map<String, dynamic> json,
+    List<String> golferIds, [
+    Map<String, double> pricesAtDraft = const {},
+  ]) {
     String? teamName;
     if (json['users'] != null && json['users'] is Map) {
       teamName = json['users']['team_name'] as String?;
@@ -201,6 +207,7 @@ class UserTeam {
       tournamentId: json['tournament_id'] as String,
       status: json['status'] as String,
       golferIds: golferIds,
+      pricesAtDraft: pricesAtDraft,
       teamName: teamName,
     );
   }
