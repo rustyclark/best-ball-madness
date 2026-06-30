@@ -101,23 +101,87 @@ serve(async (req) => {
       maxAvg = Math.max(...blends)
     }
 
-    // 4. Calculate prices and update
-    const priceUpdates = []
+    // 4. Sort and compute relative world rank percentile scores for the active field to handle weaker fields dynamically
+    const sortedGolfers = [...tgGolfers].sort((a, b) => {
+      const rankA = (a.golfer_profiles as any)?.world_rank ?? 9999
+      const rankB = (b.golfer_profiles as any)?.world_rank ?? 9999
+      return rankA - rankB
+    })
+
+    const fieldSize = sortedGolfers.length
+    const rankMap = new Map<string, number>()
+
+    let currentRank = 0
+    let prevVal = -1
+    for (let i = 0; i < fieldSize; i++) {
+      const tg = sortedGolfers[i]
+      const val = (tg.golfer_profiles as any)?.world_rank ?? 9999
+      if (val !== prevVal) {
+        currentRank = i
+        prevVal = val
+      }
+      const relativeScore = fieldSize > 1 ? (fieldSize - 1 - currentRank) / (fieldSize - 1) : 1.0
+      rankMap.set(tg.id, relativeScore)
+    }
+
+    // 5. Calculate raw combined score for each golfer
+    const golferScores = []
     for (const tg of tgGolfers) {
       const golfer = tg.golfer_profiles as any
       if (!golfer) continue
 
-      const { price } = computeGolferPrice(golfer, minAvg, maxAvg)
+      const relativeWorldRankScore = rankMap.get(tg.id) ?? 0.0
+      const { isZeroData, combinedScore } = computeGolferPrice(golfer, minAvg, maxAvg, relativeWorldRankScore)
+      golferScores.push({
+        tgId: tg.id,
+        isZeroData,
+        combinedScore,
+      })
+    }
+
+    // 6. Sort by combinedScore to compute relative combined percentile rank
+    const sortedScores = [...golferScores].sort((a, b) => a.combinedScore - b.combinedScore)
+    const scoresSize = sortedScores.length
+    const combinedPercentileMap = new Map<string, number>()
+
+    let currentScoreRank = 0
+    let prevScoreVal = -1
+    for (let i = 0; i < scoresSize; i++) {
+      const gs = sortedScores[i]
+      if (gs.combinedScore !== prevScoreVal) {
+        currentScoreRank = i
+        prevScoreVal = gs.combinedScore
+      }
+      const p = scoresSize > 1 ? currentScoreRank / (scoresSize - 1) : 1.0
+      combinedPercentileMap.set(gs.tgId, p)
+    }
+
+    // 7. Calculate final bell-curve prices and update
+    const priceUpdates = []
+    for (const gs of golferScores) {
+      let price = 12.00
+      if (!gs.isZeroData) {
+        const p = combinedPercentileMap.get(gs.tgId) ?? 0.0
+        
+        // Power-smoothstep curve (symmetric bell shape with power skew)
+        const smoothP = p * p * (3 - 2 * p) // smoothstep
+        const curve = Math.pow(smoothP, 1.5) // power skew
+        const minPrice = 12.00
+        const maxPrice = 38.00
+        
+        price = minPrice + curve * (maxPrice - minPrice)
+        price = Math.round(price * 100) / 100
+      }
 
       const { error: updateError } = await supabaseClient
         .from('tournament_golfers')
         .update({ price })
-        .eq('id', tg.id)
+        .eq('id', gs.tgId)
 
       if (updateError) {
-        console.error(`Error updating price for tournament_golfer ${tg.id}: ${updateError.message}`)
+        console.error(`Error updating price for tournament_golfer ${gs.tgId}: ${updateError.message}`)
       } else {
-        priceUpdates.push({ tgId: tg.id, price })
+        priceUpdates.push({ tgId: gs.tgId, price })
       }
     }
 

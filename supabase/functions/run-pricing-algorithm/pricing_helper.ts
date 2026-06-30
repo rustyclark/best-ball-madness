@@ -16,15 +16,16 @@ export function computeGolferPrice(
   },
   minAvg: number,
   maxAvg: number,
+  relativeWorldRankScore: number,
   N = 8
-): { isZeroData: boolean; price: number } {
+): { isZeroData: boolean; combinedScore: number } {
   const currentEvents = golfer.events_played ?? 0;
   const priorEvents = golfer.prior_events_played ?? 0;
   const hasPriorData = priorEvents > 0;
 
   // Zero-data flat-fee check
   if (currentEvents === 0 && !hasPriorData) {
-    return { isZeroData: true, price: 12.00 };
+    return { isZeroData: true, combinedScore: 0.0 };
   }
 
   const priorWeight = Math.max(0, 1 - currentEvents / N);
@@ -53,7 +54,7 @@ export function computeGolferPrice(
   const avgRange = maxAvg - minAvg;
 
   const scoring_avg_score = avgRange > 0 ? clamp((maxAvg - scoringAvg) / avgRange, 0, 1) : 0.5;
-  const world_rank_score = clamp((100 - (golfer.world_rank ?? 100)) / 100, 0, 1);
+  const world_rank_score = clamp(relativeWorldRankScore, 0, 1);
   const wins_score = clamp(winsRate / 0.15, 0, 1);
   const top10_score = clamp(top10Rate / 0.45, 0, 1);
   const cuts_score = clamp(cutsRate, 0, 1);
@@ -64,10 +65,5 @@ export function computeGolferPrice(
                    0.15 * top10_score + 
                    0.15 * cuts_score;
 
-  const minPrice = 12.00;
-  const maxPrice = 38.00;
-  let price = minPrice + Math.pow(combined, 1.5) * (maxPrice - minPrice);
-  price = Math.round(price * 100) / 100; // round to 2 decimal places
-
-  return { isZeroData: false, price };
+  return { isZeroData: false, combinedScore: combined };
 }
