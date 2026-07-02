@@ -252,9 +252,10 @@ final saveTeamAction = Provider<Future<void> Function(List<TournamentGolfer>)>((
       throw Exception('Roster must contain exactly 4 golfers');
     }
 
-    final totalBudget = selectedGolfers.fold<double>(
-      0,
-      (sum, g) => sum + g.price,
+    final totalBudget = double.parse(
+      selectedGolfers
+          .fold<double>(0, (sum, g) => sum + g.price)
+          .toStringAsFixed(2),
     );
     if (totalBudget > 100.0) {
       throw Exception('Budget of \$100 exceeded');
@@ -312,6 +313,9 @@ final saveTeamAction = Provider<Future<void> Function(List<TournamentGolfer>)>((
         }).toList();
         await client.from('team_golfers').insert(teamGolfersRows);
       }
+
+      // Update team status to ACTIVE in case it was DQ'd or CUT
+      await client.from('teams').update({'status': 'ACTIVE'}).eq('id', teamId);
     }
 
     // Refresh userTeamProvider to update the UI status

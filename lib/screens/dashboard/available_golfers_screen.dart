@@ -24,12 +24,13 @@ class AvailableGolfersScreen extends ConsumerWidget {
     final selectedGolfers = ref.watch(draftStateNotifierProvider);
 
     // Calculate spend and budget
-    final double totalSpend = selectedGolfers.fold<double>(
-      0,
-      (sum, g) => sum + g.price,
+    final double totalSpend = double.parse(
+      selectedGolfers
+          .fold<double>(0, (sum, g) => sum + g.price)
+          .toStringAsFixed(2),
     );
     final double remainingBudget = 100.0 - totalSpend;
-    final bool isOverBudget = remainingBudget < 0;
+    final bool isOverBudget = totalSpend > 100.0;
     final bool isRosterComplete = selectedGolfers.length == 4;
 
     return ResponsiveLayout(

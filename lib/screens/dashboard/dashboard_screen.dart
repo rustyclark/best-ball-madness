@@ -119,9 +119,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final teamGolfers = golfers
         .where((g) => userTeam?.golferIds.contains(g.id) ?? false)
         .toList();
-    final double currentTotalCost = teamGolfers.fold(
-      0.0,
-      (sum, g) => sum + g.price,
+    final double currentTotalCost = double.parse(
+      teamGolfers.fold(0.0, (sum, g) => sum + g.price).toStringAsFixed(2),
     );
 
     final hasPriceChanges =

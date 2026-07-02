@@ -67,6 +67,8 @@ serve(async (req) => {
           const price = (g.tournament_golfers as any)?.price ?? 0
           spend += Number(price)
         }
+        // Round to 2 decimal places to prevent floating point precision issues
+        spend = Math.round(spend * 100) / 100
 
         let isDq = false
         let dqReason = ""
