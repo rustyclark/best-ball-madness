@@ -281,7 +281,7 @@ class _DraftPanelState extends ConsumerState<DraftPanel> {
                           fontStyle: FontStyle.italic,
                         ),
                       ),
-                      if (isRosterSaved) ...[
+                      if (!widget.isLocked) ...[
                         const Spacer(),
                         TextButton.icon(
                           icon: const Icon(

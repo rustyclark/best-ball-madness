@@ -163,6 +163,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         activeTournament != null &&
         activeTournament.status != 'COMPLETED' &&
         (!isTeamLocked ||
+            (!isRosterSaved &&
+                golfers.where((g) {
+                      if (g.teeTime == null) return true;
+                      final lockTime = g.teeTime!.subtract(
+                        const Duration(minutes: 15),
+                      );
+                      return DateTime.now().toUtc().isBefore(lockTime);
+                    }).length >=
+                    4) ||
             (isRosterSaved &&
                 golfers.where((g) => userTeam.golferIds.contains(g.id)).any((
                   g,
