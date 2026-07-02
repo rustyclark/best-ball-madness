@@ -61,6 +61,14 @@ serve(async (req) => {
     const par = courseData?.shotsToPar ?? 72
     const yards = courseData?.totalYards ?? 7000
 
+    const holePars: number[] = []
+    if (courseData?.holes && Array.isArray(courseData.holes)) {
+      const sortedHoles = [...courseData.holes].sort((a: any, b: any) => (a.number ?? 0) - (b.number ?? 0))
+      for (const h of sortedHoles) {
+        holePars.push(h.shotsToPar ?? 4)
+      }
+    }
+
     // 2. Upsert tournament into public.tournaments
     const { data: tournament, error: tError } = await supabaseClient
       .from('tournaments')
@@ -75,6 +83,7 @@ serve(async (req) => {
         end_date,
         status,
         current_round,
+        hole_pars: holePars.length === 18 ? holePars : null,
       }, { onConflict: 'espn_event_id' })
       .select()
       .single()

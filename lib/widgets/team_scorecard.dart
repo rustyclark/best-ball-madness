@@ -584,6 +584,7 @@ class _TeamScorecardState extends ConsumerState<TeamScorecard> {
                                             theme,
                                             scores,
                                             teamScores,
+                                            tournament?.holePars,
                                           ),
                                           ...List.generate(
                                             (!isCompetitor ||
@@ -635,6 +636,8 @@ class _TeamScorecardState extends ConsumerState<TeamScorecard> {
                                                       ? AppColors.alternateRow
                                                       : Colors.transparent,
                                                   isInactive: isInactive,
+                                                  holePars:
+                                                      tournament?.holePars,
                                                 );
                                               } else {
                                                 return _buildRightConcealedRow(
@@ -657,6 +660,7 @@ class _TeamScorecardState extends ConsumerState<TeamScorecard> {
                                             theme: theme,
                                             backgroundColor: AppColors.primary
                                                 .withValues(alpha: 0.05),
+                                            holePars: tournament?.holePars,
                                           ),
                                         ],
                                       ),
@@ -899,6 +903,7 @@ class _TeamScorecardState extends ConsumerState<TeamScorecard> {
     ThemeData theme,
     List<HoleScore> allScores,
     List<TeamHoleScore> teamScores,
+    List<int>? holePars,
   ) {
     return Container(
       height: 36.0,
@@ -909,7 +914,7 @@ class _TeamScorecardState extends ConsumerState<TeamScorecard> {
       child: Row(
         children: List.generate(18, (i) {
           final holeNum = i + 1;
-          final par = _getParForHole(holeNum, allScores, teamScores);
+          final par = _getParForHole(holeNum, allScores, teamScores, holePars);
           return SizedBox(
             width: 40.0,
             child: Center(
@@ -1097,6 +1102,7 @@ class _TeamScorecardState extends ConsumerState<TeamScorecard> {
     required List<HoleScore> allScores,
     required ThemeData theme,
     required Color backgroundColor,
+    required List<int>? holePars,
     bool isInactive = false,
   }) {
     return Container(
@@ -1113,7 +1119,7 @@ class _TeamScorecardState extends ConsumerState<TeamScorecard> {
           final scoreMatches = scores.where((s) => s.hole == holeNum);
           final holeScore = scoreMatches.isNotEmpty ? scoreMatches.first : null;
 
-          final par = _getParForHole(holeNum, allScores, teamScores);
+          final par = _getParForHole(holeNum, allScores, teamScores, holePars);
           final isLow = _isLowScore(golfer.id, holeNum, allScores, teamScores);
 
           return SizedBox(
@@ -1290,6 +1296,7 @@ class _TeamScorecardState extends ConsumerState<TeamScorecard> {
     required List<HoleScore> allScores,
     required ThemeData theme,
     required Color backgroundColor,
+    required List<int>? holePars,
   }) {
     return Container(
       height: 68.0,
@@ -1302,7 +1309,7 @@ class _TeamScorecardState extends ConsumerState<TeamScorecard> {
               ? teamScoreMatches.first
               : null;
 
-          final par = _getParForHole(holeNum, allScores, teamScores);
+          final par = _getParForHole(holeNum, allScores, teamScores, holePars);
           final colors = getScoreColors(teamHoleScore?.bestBallScore, par);
 
           return SizedBox(
@@ -1332,12 +1339,17 @@ class _TeamScorecardState extends ConsumerState<TeamScorecard> {
     int hole,
     List<HoleScore> allScores,
     List<TeamHoleScore> teamScores,
+    List<int>? holePars,
   ) {
     final scoreMatches = allScores.where((s) => s.hole == hole);
     if (scoreMatches.isNotEmpty) return scoreMatches.first.par;
 
     final teamMatches = teamScores.where((s) => s.hole == hole);
     if (teamMatches.isNotEmpty) return teamMatches.first.par;
+
+    if (holePars != null && holePars.length >= hole) {
+      return holePars[hole - 1];
+    }
 
     return 4; // Standard fallback
   }

@@ -13,6 +13,7 @@ class Tournament {
   final String status;
   final int? currentRound;
   final DateTime? lockTimeUtc;
+  final List<int>? holePars;
 
   Tournament({
     required this.id,
@@ -28,6 +29,7 @@ class Tournament {
     required this.status,
     this.currentRound,
     this.lockTimeUtc,
+    this.holePars,
   });
 
   factory Tournament.fromJson(Map<String, dynamic> json) {
@@ -46,6 +48,9 @@ class Tournament {
       currentRound: json['current_round'] as int?,
       lockTimeUtc: json['lock_time_utc'] != null
           ? DateTime.parse(json['lock_time_utc'] as String)
+          : null,
+      holePars: json['hole_pars'] != null
+          ? List<int>.from(json['hole_pars'] as List)
           : null,
     );
   }
