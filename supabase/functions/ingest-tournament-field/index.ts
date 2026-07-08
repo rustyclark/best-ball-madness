@@ -18,15 +18,92 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // 1. Fetch active PGA event from ESPN Leaderboard
-    const leaderboardRes = await fetch("https://site.api.espn.com/apis/site/v2/sports/golf/leaderboard?league=pga")
-    if (!leaderboardRes.ok) {
-      throw new Error(`Failed to fetch leaderboard: ${leaderboardRes.statusText}`)
+    // 1. Determine event ID (parse from optional request JSON body)
+    let eventId: string | null = null
+    const contentLength = req.headers.get("content-length")
+    if (contentLength && parseInt(contentLength) > 0) {
+      try {
+        const body = await req.json()
+        if (body && body.event_id) {
+          eventId = String(body.event_id)
+        }
+      } catch (err) {
+        console.log("Failed to parse request JSON:", err.message)
+      }
     }
-    const leaderboardData = await leaderboardRes.json()
-    const event = leaderboardData.events?.[0]
+
+    let event = null
+    let leaderboardData = null
+
+    if (eventId) {
+      console.log(`Fetching specific event ID: ${eventId}`)
+      const leaderboardRes = await fetch(`https://site.api.espn.com/apis/site/v2/sports/golf/leaderboard?league=pga&event=${eventId}`)
+      if (!leaderboardRes.ok) {
+        throw new Error(`Failed to fetch leaderboard for event ID ${eventId}: ${leaderboardRes.statusText}`)
+      }
+      leaderboardData = await leaderboardRes.json()
+      event = leaderboardData.events?.[0]
+    } else {
+      console.log(`Fetching default active event`)
+      const leaderboardRes = await fetch("https://site.api.espn.com/apis/site/v2/sports/golf/leaderboard?league=pga")
+      if (!leaderboardRes.ok) {
+        throw new Error(`Failed to fetch leaderboard: ${leaderboardRes.statusText}`)
+      }
+      leaderboardData = await leaderboardRes.json()
+      event = leaderboardData.events?.[0]
+
+      // If the default event is completed, scan for the next upcoming event starting this week
+      if (event) {
+        const rawState = event.status?.type?.name ?? "STATUS_SCHEDULED"
+        const isCompleted = rawState === "STATUS_FINAL" || rawState === "STATUS_FINAL_SHORT" || rawState === "STATUS_COMPLETED"
+        
+        if (isCompleted) {
+          console.log(`Default event ${event.name} (${event.id}) is completed. Scanning for upcoming event...`)
+          const defaultEventIdStr = event.id
+          const defaultEventId = parseInt(defaultEventIdStr)
+          
+          if (!isNaN(defaultEventId)) {
+            // Check next 3 sequential event IDs
+            for (let offset = 1; offset <= 3; offset++) {
+              const candidateId = String(defaultEventId + offset)
+              try {
+                console.log(`Checking candidate event ID: ${candidateId}`)
+                const candidateRes = await fetch(`https://site.api.espn.com/apis/site/v2/sports/golf/leaderboard?league=pga&event=${candidateId}`)
+                if (candidateRes.ok) {
+                  const candidateData = await candidateRes.json()
+                  const candidateEvent = candidateData.events?.[0]
+                  
+                  if (candidateEvent) {
+                    const candState = candidateEvent.status?.type?.name ?? "STATUS_SCHEDULED"
+                    const candIsCompleted = candState === "STATUS_FINAL" || candState === "STATUS_FINAL_SHORT" || candState === "STATUS_COMPLETED"
+                    
+                    if (!candIsCompleted) {
+                      const candDate = new Date(candidateEvent.date)
+                      const now = new Date()
+                      const diffTime = candDate.getTime() - now.getTime()
+                      const diffDays = diffTime / (1000 * 60 * 60 * 24)
+                      
+                      // If candidate starts within the next 7 days (or started yesterday/today)
+                      if (diffDays >= -1 && diffDays <= 7) {
+                        console.log(`Found upcoming candidate event: ${candidateEvent.name} (${candidateEvent.id}) starting in ${diffDays.toFixed(1)} days.`)
+                        event = candidateEvent
+                        leaderboardData = candidateData
+                        break
+                      }
+                    }
+                  }
+                }
+              } catch (err) {
+                console.error(`Error checking candidate event ${candidateId}:`, err)
+              }
+            }
+          }
+        }
+      }
+    }
+
     if (!event) {
-      return new Response(JSON.stringify({ message: "No active event found on ESPN leaderboard." }), {
+      return new Response(JSON.stringify({ message: "No active or upcoming event found on ESPN leaderboard." }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
       })
