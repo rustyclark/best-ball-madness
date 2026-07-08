@@ -1,9 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:best_ball_madness/providers/auth_providers.dart';
 import 'package:best_ball_madness/providers/draft_providers.dart';
+import 'helpers/fake_supabase.dart';
 
 void main() {
   late ProviderContainer container;
+  late FakeSupabaseClient fakeSupabase;
 
   // Mock Golfer data
   final golfer1 = TournamentGolfer(
@@ -51,8 +55,76 @@ void main() {
     profile: GolferProfile(id: 'gp-5', espnId: '5', name: 'Tiger Woods'),
   );
 
-  setUp(() {
-    container = ProviderContainer();
+  setUp(() async {
+    final mockUser = User(
+      id: 'mock-user-id',
+      appMetadata: {},
+      userMetadata: {},
+      aud: 'authenticated',
+      createdAt: DateTime.now().toIso8601String(),
+      email: 'test@example.com',
+    );
+    final mockSession = Session(
+      accessToken: 'mock',
+      tokenType: 'bearer',
+      user: mockUser,
+    );
+
+    fakeSupabase = FakeSupabaseClient(
+      auth: FakeGoTrueClient(initialSession: mockSession),
+      onInsert: (table, row) {
+        if (table == 'teams') {
+          row['id'] ??= 'team-mock-id';
+          row['status'] ??= 'ACTIVE';
+        }
+        fakeSupabase.mockData[table]?.add(row);
+      },
+      mockData: {'tournaments': [], 'teams': [], 'team_golfers': []},
+    );
+
+    container = ProviderContainer(
+      overrides: [
+        supabaseClientProvider.overrideWithValue(fakeSupabase),
+        activeTournamentProvider.overrideWith(
+          (ref) => Tournament(
+            id: 't-1',
+            espnEventId: 'espn-1',
+            name: 'The Masters',
+            course: 'Augusta National',
+            location: 'Augusta, GA',
+            par: 72,
+            yards: 7400,
+            startDate: DateTime.now(),
+            endDate: DateTime.now().add(const Duration(days: 3)),
+            status: 'IN_PROGRESS',
+            currentRound: 1,
+          ),
+        ),
+        userTeamProvider.overrideWith((ref) {
+          final teams = fakeSupabase.mockData['teams'] ?? [];
+          if (teams.isEmpty) return null;
+          final team = teams.first;
+          final teamGolfers = fakeSupabase.mockData['team_golfers'] ?? [];
+          final golferIds = teamGolfers
+              .where((tg) => tg['team_id'] == team['id'])
+              .map((tg) => tg['tournament_golfer_id'] as String)
+              .toList();
+          return UserTeam(
+            id: team['id'] as String,
+            userId: team['user_id'] as String,
+            tournamentId: team['tournament_id'] as String,
+            status: team['status'] as String,
+            golferIds: golferIds,
+            pricesAtDraft: {},
+          );
+        }),
+      ],
+    );
+
+    // Warm up the providers so they are resolved to AsyncData before tests run
+    container.listen(activeTournamentProvider, (_, _) {});
+    container.listen(authSessionProvider, (_, _) {});
+    await pumpEventQueue();
   });
 
   tearDown(() {
@@ -64,23 +136,24 @@ void main() {
     expect(state, isEmpty);
   });
 
-  test('DraftStateNotifier allows adding a golfer to the roster selection', () {
+  test(
+    'DraftStateNotifier allows adding a golfer to the roster selection',
+    () async {
+      final notifier = container.read(draftStateNotifierProvider.notifier);
+
+      await notifier.addGolfer(golfer1);
+
+      final state = container.read(draftStateNotifierProvider);
+      expect(state, hasLength(1));
+      expect(state.first.id, 'tg-1');
+    },
+  );
+
+  test('DraftStateNotifier prevents adding the same golfer twice', () async {
     final notifier = container.read(draftStateNotifierProvider.notifier);
 
-    final success = notifier.addGolfer(golfer1);
-    expect(success, isTrue);
-
-    final state = container.read(draftStateNotifierProvider);
-    expect(state, hasLength(1));
-    expect(state.first.id, 'tg-1');
-  });
-
-  test('DraftStateNotifier prevents adding the same golfer twice', () {
-    final notifier = container.read(draftStateNotifierProvider.notifier);
-
-    notifier.addGolfer(golfer1);
-    final success = notifier.addGolfer(golfer1);
-    expect(success, isFalse);
+    await notifier.addGolfer(golfer1);
+    expect(() => notifier.addGolfer(golfer1), throwsException);
 
     final state = container.read(draftStateNotifierProvider);
     expect(state, hasLength(1));
@@ -88,30 +161,30 @@ void main() {
 
   test(
     'DraftStateNotifier allows removing a golfer from the roster selection',
-    () {
+    () async {
       final notifier = container.read(draftStateNotifierProvider.notifier);
 
-      notifier.addGolfer(golfer1);
-      notifier.addGolfer(golfer2);
+      await notifier.addGolfer(golfer1);
+      await notifier.addGolfer(golfer2);
       expect(container.read(draftStateNotifierProvider), hasLength(2));
 
-      notifier.removeGolfer(golfer1);
+      await notifier.removeGolfer(golfer1);
       final state = container.read(draftStateNotifierProvider);
       expect(state, hasLength(1));
       expect(state.first.id, 'tg-2');
     },
   );
 
-  test('DraftStateNotifier enforces roster limit of 4 golfers', () {
+  test('DraftStateNotifier enforces roster limit of 4 golfers', () async {
     final notifier = container.read(draftStateNotifierProvider.notifier);
 
-    expect(notifier.addGolfer(golfer1), isTrue);
-    expect(notifier.addGolfer(golfer2), isTrue);
-    expect(notifier.addGolfer(golfer3), isTrue);
-    expect(notifier.addGolfer(golfer4), isTrue);
+    await notifier.addGolfer(golfer1);
+    await notifier.addGolfer(golfer2);
+    await notifier.addGolfer(golfer3);
+    await notifier.addGolfer(golfer4);
 
     // 5th golfer should be rejected
-    expect(notifier.addGolfer(golfer5), isFalse);
+    expect(() => notifier.addGolfer(golfer5), throwsException);
 
     final state = container.read(draftStateNotifierProvider);
     expect(state, hasLength(4));
@@ -120,11 +193,11 @@ void main() {
 
   test(
     'DraftStateNotifier calculates budget correctly when adding/removing',
-    () {
+    () async {
       final notifier = container.read(draftStateNotifierProvider.notifier);
 
-      notifier.addGolfer(golfer1); // $30.50
-      notifier.addGolfer(golfer2); // $29.00
+      await notifier.addGolfer(golfer1); // $30.50
+      await notifier.addGolfer(golfer2); // $29.00
 
       double totalSpend = container
           .read(draftStateNotifierProvider)
@@ -132,7 +205,7 @@ void main() {
       expect(totalSpend, 59.50);
       expect(100.0 - totalSpend, 40.50);
 
-      notifier.removeGolfer(golfer1);
+      await notifier.removeGolfer(golfer1);
 
       totalSpend = container
           .read(draftStateNotifierProvider)
@@ -142,11 +215,11 @@ void main() {
     },
   );
 
-  test('DraftStateNotifier clear removes all golfers from selection', () {
+  test('DraftStateNotifier clear removes all golfers from selection', () async {
     final notifier = container.read(draftStateNotifierProvider.notifier);
 
-    notifier.addGolfer(golfer1);
-    notifier.addGolfer(golfer2);
+    await notifier.addGolfer(golfer1);
+    await notifier.addGolfer(golfer2);
     expect(container.read(draftStateNotifierProvider), isNotEmpty);
 
     notifier.clear();

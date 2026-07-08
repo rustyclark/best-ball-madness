@@ -265,41 +265,64 @@ class _GolferTableState extends ConsumerState<GolferTable> {
                   Padding(
                     padding: const EdgeInsets.only(right: AppSpacing.sm),
                     child: GestureDetector(
-                      onTap: () {
+                      onTap: () async {
                         if (isSelected) {
-                          ref
-                              .read(draftStateNotifierProvider.notifier)
-                              .removeGolfer(golfer);
-                        } else {
-                          if (widget.replacingGolfer != null) {
-                            final success = ref
+                          try {
+                            await ref
                                 .read(draftStateNotifierProvider.notifier)
-                                .replaceGolfer(widget.replacingGolfer!, golfer);
-                            if (success) {
-                              Navigator.pop(context);
-                            } else {
+                                .removeGolfer(golfer);
+                          } catch (e) {
+                            if (mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
+                                SnackBar(
                                   content: Text(
-                                    'Golfer is already on your roster!',
+                                    'Failed to remove golfer: ${e.toString().replaceFirst('Exception: ', '')}',
                                   ),
-                                  duration: Duration(seconds: 2),
+                                  duration: const Duration(seconds: 2),
                                 ),
                               );
                             }
-                          } else {
-                            final success = ref
-                                .read(draftStateNotifierProvider.notifier)
-                                .addGolfer(golfer);
-                            if (!success) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Roster is already full! Remove a golfer first.',
+                          }
+                        } else {
+                          if (widget.replacingGolfer != null) {
+                            try {
+                              await ref
+                                  .read(draftStateNotifierProvider.notifier)
+                                  .replaceGolfer(
+                                    widget.replacingGolfer!,
+                                    golfer,
+                                  );
+                              if (mounted) {
+                                Navigator.pop(context);
+                              }
+                            } catch (e) {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Failed to replace golfer: ${e.toString().replaceFirst('Exception: ', '')}',
+                                    ),
+                                    duration: const Duration(seconds: 2),
                                   ),
-                                  duration: Duration(seconds: 2),
-                                ),
-                              );
+                                );
+                              }
+                            }
+                          } else {
+                            try {
+                              await ref
+                                  .read(draftStateNotifierProvider.notifier)
+                                  .addGolfer(golfer);
+                            } catch (e) {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Failed to add golfer: ${e.toString().replaceFirst('Exception: ', '')}',
+                                    ),
+                                    duration: const Duration(seconds: 2),
+                                  ),
+                                );
+                              }
                             }
                           }
                         }
