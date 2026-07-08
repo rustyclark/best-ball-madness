@@ -122,8 +122,8 @@ void main() {
     );
 
     // Warm up the providers so they are resolved to AsyncData before tests run
-    container.listen(activeTournamentProvider, (_, __) {});
-    container.listen(authSessionProvider, (_, __) {});
+    container.listen(activeTournamentProvider, (_, _) {});
+    container.listen(authSessionProvider, (_, _) {});
     await pumpEventQueue();
   });
 
@@ -140,13 +140,6 @@ void main() {
     'DraftStateNotifier allows adding a golfer to the roster selection',
     () async {
       final notifier = container.read(draftStateNotifierProvider.notifier);
-
-      print(
-        'DEBUG: activeTournamentProvider state = ${container.read(activeTournamentProvider)}',
-      );
-      print(
-        'DEBUG: authSessionProvider state = ${container.read(authSessionProvider)}',
-      );
 
       await notifier.addGolfer(golfer1);
 
