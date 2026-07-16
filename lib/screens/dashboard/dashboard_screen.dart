@@ -419,7 +419,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         children: [
                           DraftPanel(isLocked: isTeamLocked),
                           const SizedBox(height: AppSpacing.md),
-                          if (!isRosterSaved) ...[
+                          if (userTeam == null ||
+                              userTeam.golferIds.length < 4) ...[
                             _buildAvailableGolfersPreview(
                               theme,
                               golfersList,

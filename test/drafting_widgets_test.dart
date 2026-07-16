@@ -183,11 +183,8 @@ void main() {
       findsOneWidget,
     );
 
-    // Save button should be disabled (onPressed is null)
-    final saveButtonFinder = find.widgetWithText(ElevatedButton, 'Save Team');
-    expect(saveButtonFinder, findsOneWidget);
-    final ElevatedButton saveButton = tester.widget(saveButtonFinder);
-    expect(saveButton.onPressed, isNull);
+    // Save button should not exist, changes are saved automatically
+    expect(find.widgetWithText(ElevatedButton, 'Save Team'), findsNothing);
   });
 
   testWidgets('DraftPanel enforces budget constraint (> \$100)', (
@@ -215,10 +212,8 @@ void main() {
       findsOneWidget,
     );
 
-    // Save button should be disabled
-    final saveButtonFinder = find.widgetWithText(ElevatedButton, 'Save Team');
-    final ElevatedButton saveButton = tester.widget(saveButtonFinder);
-    expect(saveButton.onPressed, isNull);
+    // Save button should not exist
+    expect(find.widgetWithText(ElevatedButton, 'Save Team'), findsNothing);
   });
 
   testWidgets('DraftPanel enables save when exactly 4 golfers and <= \$100', (
@@ -268,10 +263,9 @@ void main() {
       findsNothing,
     );
 
-    // Save button should be enabled
-    final saveButtonFinder = find.widgetWithText(ElevatedButton, 'Save Team');
-    final ElevatedButton saveButton = tester.widget(saveButtonFinder);
-    expect(saveButton.onPressed, isNotNull);
+    // Save button should not exist, changes are saved automatically
+    expect(find.widgetWithText(ElevatedButton, 'Save Team'), findsNothing);
+    expect(find.text('Roster changes are saved automatically'), findsOneWidget);
   });
 
   testWidgets('DraftPanel enforces read-only locking post-lock', (
@@ -294,9 +288,9 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    // Should show ROSTER LOCKED container and not show Save Team button
+    // Should show ROSTER LOCKED container and not show auto-save message
     expect(find.text('ROSTER LOCKED'), findsOneWidget);
-    expect(find.widgetWithText(ElevatedButton, 'Save Team'), findsNothing);
+    expect(find.text('Roster changes are saved automatically'), findsNothing);
 
     // Remove buttons should be hidden (no icon button for removal)
     expect(find.byIcon(Icons.remove_circle_outline), findsNothing);
