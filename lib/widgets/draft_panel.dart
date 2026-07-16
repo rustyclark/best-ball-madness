@@ -318,8 +318,8 @@ class _DraftPanelState extends ConsumerState<DraftPanel> {
               _buildAlert(
                 theme,
                 'Roster incomplete! Draft exactly 4 golfers.',
-                AppColors.textSecondary,
-                Icons.info_outline,
+                AppColors.statusLiveText,
+                Icons.warning_amber_rounded,
               ),
               const SizedBox(height: AppSpacing.xs),
             ],
@@ -365,6 +365,38 @@ class _DraftPanelState extends ConsumerState<DraftPanel> {
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else if (isOverBudget || !isRosterComplete || hasWdGolfer)
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: AppColors.statusLiveBg.withValues(alpha: 0.3),
+                  borderRadius: AppSpacing.borderRadiusMd,
+                  border: Border.all(
+                    color: AppColors.statusLiveText.withValues(alpha: 0.5),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.warning_amber_rounded,
+                      color: AppColors.statusLiveText,
+                      size: 16,
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                    Flexible(
+                      child: Text(
+                        'Changes saved. Roster is currently invalid!',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.statusLiveText,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
