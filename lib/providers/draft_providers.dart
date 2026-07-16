@@ -247,6 +247,15 @@ class DraftStateNotifier extends Notifier<List<TournamentGolfer>> {
     });
 
     state = [...state, golfer];
+
+    // Reset status to ACTIVE if the roster is now complete and under budget
+    final totalSpend = double.parse(
+      state.fold<double>(0, (sum, g) => sum + g.price).toStringAsFixed(2),
+    );
+    if (state.length == 4 && totalSpend <= 100.0) {
+      await client.from('teams').update({'status': 'ACTIVE'}).eq('id', teamId);
+    }
+
     ref.invalidate(userTeamProvider);
   }
 
@@ -306,6 +315,18 @@ class DraftStateNotifier extends Notifier<List<TournamentGolfer>> {
     }
 
     state = state.map((g) => g.id == oldGolfer.id ? newGolfer : g).toList();
+
+    // Reset status to ACTIVE if the roster is now complete and under budget
+    final totalSpend = double.parse(
+      state.fold<double>(0, (sum, g) => sum + g.price).toStringAsFixed(2),
+    );
+    if (state.length == 4 && totalSpend <= 100.0) {
+      await client
+          .from('teams')
+          .update({'status': 'ACTIVE'})
+          .eq('id', existingTeam.id);
+    }
+
     ref.invalidate(userTeamProvider);
   }
 
