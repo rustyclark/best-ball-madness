@@ -39,6 +39,30 @@ final supabaseClientProvider = Provider<SupabaseClient>((ref) {
   return Supabase.instance.client;
 });
 
+/// StreamProvider exposing the current authenticated Supabase [AuthState].
+final authStateProvider = StreamProvider<AuthState>((ref) {
+  final client = ref.watch(supabaseClientProvider);
+  return client.auth.onAuthStateChange;
+});
+
+/// Notifier managing whether the user is in a password recovery flow.
+class PasswordRecoveryNotifier extends Notifier<bool> {
+  @override
+  bool build() {
+    return false;
+  }
+
+  void setRecovery(bool value) {
+    state = value;
+  }
+}
+
+/// Provider tracking whether the user is in a password recovery flow.
+final isPasswordRecoveryProvider =
+    NotifierProvider<PasswordRecoveryNotifier, bool>(() {
+      return PasswordRecoveryNotifier();
+    });
+
 /// StreamProvider exposing the current authenticated Supabase [Session].
 final authSessionProvider = StreamProvider<Session?>((ref) {
   final client = ref.watch(supabaseClientProvider);
