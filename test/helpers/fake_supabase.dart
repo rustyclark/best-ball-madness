@@ -11,9 +11,11 @@ class FakeGoTrueClient extends Fake implements GoTrueClient {
   bool signUpCalled = false;
   bool signOutCalled = false;
   bool signUpReturnsNullSession = false;
+  bool updateUserCalled = false;
 
   String? lastEmail;
   String? lastPassword;
+  UserAttributes? lastUserAttributes;
 
   FakeGoTrueClient({Session? initialSession}) {
     _currentSession = initialSession;
@@ -123,6 +125,25 @@ class FakeGoTrueClient extends Fake implements GoTrueClient {
       signOutCalled = true;
       emitSession(null);
       return Future.value();
+    }
+
+    if (name == #updateUser) {
+      updateUserCalled = true;
+      final args = invocation.positionalArguments;
+      if (args.isNotEmpty && args[0] is UserAttributes) {
+        lastUserAttributes = args[0] as UserAttributes;
+      }
+      final user =
+          _currentUser ??
+          User(
+            id: 'mock-user-id',
+            appMetadata: {},
+            userMetadata: {},
+            aud: 'authenticated',
+            createdAt: DateTime.now().toIso8601String(),
+            email: 'user@domain.com',
+          );
+      return Future.value(UserResponse.fromJson({'user': user.toJson()}));
     }
 
     return super.noSuchMethod(invocation);
