@@ -67,3 +67,15 @@ export function computeGolferPrice(
 
   return { isZeroData: false, combinedScore: combined };
 }
+
+export function computePriceFromPercentile(p: number, isZeroData: boolean): number {
+  if (isZeroData) return 12.00;
+  const clampedP = Math.max(0, Math.min(1, p));
+  const smoothP = clampedP * clampedP * (3 - 2 * clampedP); // smoothstep
+  const curve = Math.pow(smoothP, 2.4); // power skew: tuned to 2.4 to smooth 11-33% and 33-66% tiers
+  const minPrice = 12.00;
+  const maxPrice = 38.00;
+  const price = minPrice + curve * (maxPrice - minPrice);
+  return Math.round(price * 100) / 100;
+}
+
