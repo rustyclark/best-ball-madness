@@ -7,6 +7,7 @@ import 'providers/auth_providers.dart';
 import 'screens/auth/auth_screen.dart';
 import 'screens/auth/missing_env_screen.dart';
 import 'screens/auth/setup_team_screen.dart';
+import 'screens/auth/reset_password_screen.dart';
 import 'screens/dashboard/dashboard_screen.dart';
 import 'theme/colors.dart';
 import 'theme/theme.dart';
@@ -67,6 +68,18 @@ class NavigationSwitcher extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Listen for auth state changes to detect password recovery events
+    ref.listen<AsyncValue<AuthState>>(authStateProvider, (previous, next) {
+      if (next.value?.event == AuthChangeEvent.passwordRecovery) {
+        ref.read(isPasswordRecoveryProvider.notifier).setRecovery(true);
+      }
+    });
+
+    final isPasswordRecovery = ref.watch(isPasswordRecoveryProvider);
+    if (isPasswordRecovery) {
+      return const ResetPasswordScreen();
+    }
+
     final sessionAsync = ref.watch(authSessionProvider);
 
     return sessionAsync.when(

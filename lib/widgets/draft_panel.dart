@@ -6,7 +6,6 @@ import '../theme/spacing.dart';
 import '../utils/score_utils.dart';
 import '../screens/dashboard/available_golfers_screen.dart';
 import 'badge.dart';
-import 'button.dart';
 import 'card.dart';
 import 'golfer_avatar.dart';
 
@@ -21,35 +20,19 @@ class DraftPanel extends ConsumerStatefulWidget {
 }
 
 class _DraftPanelState extends ConsumerState<DraftPanel> {
-  bool _isSaving = false;
   String? _saveError;
 
-  Future<void> _handleSave() async {
+  Future<void> _handleRemove(TournamentGolfer golfer) async {
     setState(() {
-      _isSaving = true;
       _saveError = null;
     });
 
     try {
-      final selectedGolfers = ref.read(draftStateNotifierProvider);
-      final saveAction = ref.read(saveTeamAction);
-      await saveAction(selectedGolfers);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Roster saved successfully!')),
-        );
-        widget.onSaveSuccess?.call();
-      }
+      await ref.read(draftStateNotifierProvider.notifier).removeGolfer(golfer);
     } catch (e) {
       if (mounted) {
         setState(() {
           _saveError = e.toString().replaceFirst('Exception: ', '');
-        });
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSaving = false;
         });
       }
     }
@@ -71,9 +54,6 @@ class _DraftPanelState extends ConsumerState<DraftPanel> {
     final bool isOverBudget = totalSpend > 100.0;
     final bool isRosterComplete = selectedGolfers.length == 4;
     final bool hasWdGolfer = selectedGolfers.any((g) => g.status == 'WD');
-
-    final bool canSave =
-        isRosterComplete && !isOverBudget && !widget.isLocked && !_isSaving;
 
     return BbmCard(
       child: SingleChildScrollView(
@@ -156,11 +136,14 @@ class _DraftPanelState extends ConsumerState<DraftPanel> {
                           children: [
                             Row(
                               children: [
-                                Text(
-                                  golfer.profile.name,
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.textPrimary,
+                                Flexible(
+                                  child: Text(
+                                    golfer.profile.name,
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                                 if (golfer.status == 'WD') ...[
@@ -196,50 +179,50 @@ class _DraftPanelState extends ConsumerState<DraftPanel> {
                         ),
                       ),
                       if (!isGolferLocked)
-                        isRosterSaved
-                            ? TextButton.icon(
-                                icon: const Icon(
-                                  Icons.edit_outlined,
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            TextButton.icon(
+                              icon: const Icon(
+                                Icons.edit_outlined,
+                                color: AppColors.primary,
+                                size: 16,
+                              ),
+                              label: const Text(
+                                'EDIT',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
                                   color: AppColors.primary,
-                                  size: 16,
                                 ),
-                                label: const Text(
-                                  'EDIT',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12,
-                                    color: AppColors.primary,
+                              ),
+                              onPressed: () {
+                                final golfers =
+                                    ref.read(golferListProvider).value ?? [];
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        AvailableGolfersScreen(
+                                          golfers: golfers,
+                                          isLocked: widget.isLocked,
+                                          replacingGolfer: golfer,
+                                        ),
                                   ),
-                                ),
-                                onPressed: () {
-                                  final golfers =
-                                      ref.read(golferListProvider).value ?? [];
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          AvailableGolfersScreen(
-                                            golfers: golfers,
-                                            isLocked: widget.isLocked,
-                                            replacingGolfer: golfer,
-                                          ),
-                                    ),
-                                  );
-                                },
-                              )
-                            : IconButton(
-                                icon: const Icon(
-                                  Icons.remove_circle_outline,
-                                  color: AppColors.scoreBogeyBg,
-                                  size: 20,
-                                ),
-                                onPressed: () {
-                                  ref
-                                      .read(draftStateNotifierProvider.notifier)
-                                      .removeGolfer(golfer);
-                                },
-                                tooltip: 'Remove',
-                              )
+                                );
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.remove_circle_outline,
+                                color: AppColors.scoreBogeyBg,
+                                size: 20,
+                              ),
+                              onPressed: () => _handleRemove(golfer),
+                              tooltip: 'Remove',
+                            ),
+                          ],
+                        )
                       else
                         const Padding(
                           padding: EdgeInsets.symmetric(horizontal: 12.0),
@@ -335,8 +318,8 @@ class _DraftPanelState extends ConsumerState<DraftPanel> {
               _buildAlert(
                 theme,
                 'Roster incomplete! Draft exactly 4 golfers.',
-                AppColors.textSecondary,
-                Icons.info_outline,
+                AppColors.statusLiveText,
+                Icons.warning_amber_rounded,
               ),
               const SizedBox(height: AppSpacing.xs),
             ],
@@ -387,11 +370,69 @@ class _DraftPanelState extends ConsumerState<DraftPanel> {
                   ],
                 ),
               )
+            else if (isOverBudget || !isRosterComplete || hasWdGolfer)
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: AppColors.statusLiveBg.withValues(alpha: 0.3),
+                  borderRadius: AppSpacing.borderRadiusMd,
+                  border: Border.all(
+                    color: AppColors.statusLiveText.withValues(alpha: 0.5),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.warning_amber_rounded,
+                      color: AppColors.statusLiveText,
+                      size: 16,
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                    Flexible(
+                      child: Text(
+                        'Changes saved. Roster is currently invalid!',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.statusLiveText,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              )
             else
-              BbmButton(
-                text: 'Save Team',
-                onPressed: canSave ? _handleSave : null,
-                isLoading: _isSaving,
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.05),
+                  borderRadius: AppSpacing.borderRadiusMd,
+                  border: Border.all(
+                    color: AppColors.primary.withValues(alpha: 0.2),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.check_circle_outline,
+                      color: AppColors.primary,
+                      size: 16,
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                    Flexible(
+                      child: Text(
+                        'Roster changes are saved automatically',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
               ),
           ],
         ),

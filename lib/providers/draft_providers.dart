@@ -207,62 +207,20 @@ class DraftStateNotifier extends Notifier<List<TournamentGolfer>> {
     state = selection;
   }
 
-  bool addGolfer(TournamentGolfer golfer) {
-    if (state.length >= 4) return false;
-    if (state.any((g) => g.id == golfer.id)) return false;
-    state = [...state, golfer];
-    return true;
-  }
+  Future<void> addGolfer(TournamentGolfer golfer) async {
+    if (state.length >= 4) {
+      throw Exception('Roster is already full');
+    }
+    if (state.any((g) => g.id == golfer.id)) {
+      throw Exception('Golfer is already on your roster');
+    }
 
-  void removeGolfer(TournamentGolfer golfer) {
-    state = state.where((g) => g.id != golfer.id).toList();
-  }
-
-  bool replaceGolfer(TournamentGolfer oldGolfer, TournamentGolfer newGolfer) {
-    if (state.any((g) => g.id == newGolfer.id)) return false;
-    state = state.map((g) => g.id == oldGolfer.id ? newGolfer : g).toList();
-    return true;
-  }
-
-  void clear() {
-    state = [];
-  }
-}
-
-/// Provider for the local client-side draft selection state.
-final draftStateNotifierProvider =
-    NotifierProvider<DraftStateNotifier, List<TournamentGolfer>>(() {
-      return DraftStateNotifier();
-    });
-
-/// Provider for the save team action.
-final saveTeamAction = Provider<Future<void> Function(List<TournamentGolfer>)>((
-  ref,
-) {
-  return (selectedGolfers) async {
     final client = ref.read(supabaseClientProvider);
     final activeTournament = ref.read(activeTournamentProvider).value;
     final session = ref.read(authSessionProvider).value;
 
     if (activeTournament == null || session == null) {
       throw Exception('Missing active tournament or user session');
-    }
-
-    if (selectedGolfers.length != 4) {
-      throw Exception('Roster must contain exactly 4 golfers');
-    }
-
-    final totalBudget = double.parse(
-      selectedGolfers
-          .fold<double>(0, (sum, g) => sum + g.price)
-          .toStringAsFixed(2),
-    );
-    if (totalBudget > 100.0) {
-      throw Exception('Budget of \$100 exceeded');
-    }
-
-    if (activeTournament.status == 'COMPLETED') {
-      throw Exception('Tournament has completed. Cannot modify roster.');
     }
 
     final existingTeam = ref.read(userTeamProvider).value;
@@ -279,46 +237,106 @@ final saveTeamAction = Provider<Future<void> Function(List<TournamentGolfer>)>((
           .select()
           .single();
       teamId = teamInsert['id'] as String;
-
-      final List<Map<String, dynamic>> teamGolfersRows = selectedGolfers.map((
-        golfer,
-      ) {
-        return {'team_id': teamId, 'tournament_golfer_id': golfer.id};
-      }).toList();
-
-      await client.from('team_golfers').insert(teamGolfersRows);
     } else {
       teamId = existingTeam.id;
-      final currentGolferIds = existingTeam.golferIds;
-      final newGolferIds = selectedGolfers.map((g) => g.id).toList();
+    }
 
-      final toRemove = currentGolferIds
-          .where((id) => !newGolferIds.contains(id))
-          .toList();
-      final toAdd = newGolferIds
-          .where((id) => !currentGolferIds.contains(id))
-          .toList();
+    await client.from('team_golfers').insert({
+      'team_id': teamId,
+      'tournament_golfer_id': golfer.id,
+    });
 
-      if (toRemove.isNotEmpty) {
-        await client
-            .from('team_golfers')
-            .delete()
-            .eq('team_id', teamId)
-            .inFilter('tournament_golfer_id', toRemove);
-      }
+    state = [...state, golfer];
 
-      if (toAdd.isNotEmpty) {
-        final List<Map<String, dynamic>> teamGolfersRows = toAdd.map((id) {
-          return {'team_id': teamId, 'tournament_golfer_id': id};
-        }).toList();
-        await client.from('team_golfers').insert(teamGolfersRows);
-      }
-
-      // Update team status to ACTIVE in case it was DQ'd or CUT
+    // Reset status to ACTIVE if the roster is now complete and under budget
+    final totalSpend = double.parse(
+      state.fold<double>(0, (sum, g) => sum + g.price).toStringAsFixed(2),
+    );
+    if (state.length == 4 && totalSpend <= 100.0) {
       await client.from('teams').update({'status': 'ACTIVE'}).eq('id', teamId);
     }
 
-    // Refresh userTeamProvider to update the UI status
     ref.invalidate(userTeamProvider);
-  };
-});
+  }
+
+  Future<void> removeGolfer(TournamentGolfer golfer) async {
+    final client = ref.read(supabaseClientProvider);
+    final existingTeam = ref.read(userTeamProvider).value;
+
+    if (existingTeam == null) {
+      throw Exception('Team not found');
+    }
+
+    await client
+        .from('team_golfers')
+        .delete()
+        .eq('team_id', existingTeam.id)
+        .eq('tournament_golfer_id', golfer.id);
+
+    state = state.where((g) => g.id != golfer.id).toList();
+    ref.invalidate(userTeamProvider);
+  }
+
+  Future<void> replaceGolfer(
+    TournamentGolfer oldGolfer,
+    TournamentGolfer newGolfer,
+  ) async {
+    if (state.any((g) => g.id == newGolfer.id)) {
+      throw Exception('Golfer is already on your roster');
+    }
+
+    final client = ref.read(supabaseClientProvider);
+    final existingTeam = ref.read(userTeamProvider).value;
+
+    if (existingTeam == null) {
+      throw Exception('Team not found');
+    }
+
+    // Delete old golfer
+    await client
+        .from('team_golfers')
+        .delete()
+        .eq('team_id', existingTeam.id)
+        .eq('tournament_golfer_id', oldGolfer.id);
+
+    // Insert new golfer
+    try {
+      await client.from('team_golfers').insert({
+        'team_id': existingTeam.id,
+        'tournament_golfer_id': newGolfer.id,
+      });
+    } catch (e) {
+      // Rollback if insert fails (e.g. over budget or golfer teed off/locked)
+      await client.from('team_golfers').insert({
+        'team_id': existingTeam.id,
+        'tournament_golfer_id': oldGolfer.id,
+      });
+      rethrow;
+    }
+
+    state = state.map((g) => g.id == oldGolfer.id ? newGolfer : g).toList();
+
+    // Reset status to ACTIVE if the roster is now complete and under budget
+    final totalSpend = double.parse(
+      state.fold<double>(0, (sum, g) => sum + g.price).toStringAsFixed(2),
+    );
+    if (state.length == 4 && totalSpend <= 100.0) {
+      await client
+          .from('teams')
+          .update({'status': 'ACTIVE'})
+          .eq('id', existingTeam.id);
+    }
+
+    ref.invalidate(userTeamProvider);
+  }
+
+  void clear() {
+    state = [];
+  }
+}
+
+/// Provider for the local client-side draft selection state.
+final draftStateNotifierProvider =
+    NotifierProvider<DraftStateNotifier, List<TournamentGolfer>>(() {
+      return DraftStateNotifier();
+    });

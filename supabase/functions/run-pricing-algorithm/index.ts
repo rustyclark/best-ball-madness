@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.21.0"
-import { computeGolferPrice } from "./pricing_helper.ts"
+import { computeGolferPrice, computePriceFromPercentile } from "./pricing_helper.ts"
 
 serve(async (req) => {
   const corsHeaders = {
@@ -159,19 +159,8 @@ serve(async (req) => {
     // 7. Calculate final bell-curve prices and update
     const priceUpdates = []
     for (const gs of golferScores) {
-      let price = 12.00
-      if (!gs.isZeroData) {
-        const p = combinedPercentileMap.get(gs.tgId) ?? 0.0
-        
-        // Power-smoothstep curve (symmetric bell shape with power skew)
-        const smoothP = p * p * (3 - 2 * p) // smoothstep
-        const curve = Math.pow(smoothP, 1.5) // power skew
-        const minPrice = 12.00
-        const maxPrice = 38.00
-        
-        price = minPrice + curve * (maxPrice - minPrice)
-        price = Math.round(price * 100) / 100
-      }
+      const p = combinedPercentileMap.get(gs.tgId) ?? 0.0
+      const price = computePriceFromPercentile(p, gs.isZeroData)
 
       const { error: updateError } = await supabaseClient
         .from('tournament_golfers')

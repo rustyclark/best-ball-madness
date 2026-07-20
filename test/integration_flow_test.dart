@@ -294,16 +294,12 @@ void main() {
           await tester.pumpAndSettle();
         }
 
-        // Draft panel should now show no empty slots and have the Save Team button active
+        // Draft panel should now show no empty slots and indicate that changes are saved automatically
         expect(find.text('Empty Slot'), findsNothing);
-        final saveBtn = find.widgetWithText(BbmButton, 'Save Team');
-        expect(saveBtn, findsOneWidget);
-
-        // Save the team
-        await tester.ensureVisible(saveBtn);
-        await tester.pumpAndSettle();
-        await tester.tap(saveBtn);
-        await tester.pump(const Duration(milliseconds: 100));
+        expect(
+          find.text('Roster changes are saved automatically'),
+          findsOneWidget,
+        );
         await tester.pumpAndSettle();
 
         // 5. Logout Flow

@@ -11,9 +11,11 @@ class FakeGoTrueClient extends Fake implements GoTrueClient {
   bool signUpCalled = false;
   bool signOutCalled = false;
   bool signUpReturnsNullSession = false;
+  bool updateUserCalled = false;
 
   String? lastEmail;
   String? lastPassword;
+  UserAttributes? lastUserAttributes;
 
   FakeGoTrueClient({Session? initialSession}) {
     _currentSession = initialSession;
@@ -125,6 +127,25 @@ class FakeGoTrueClient extends Fake implements GoTrueClient {
       return Future.value();
     }
 
+    if (name == #updateUser) {
+      updateUserCalled = true;
+      final args = invocation.positionalArguments;
+      if (args.isNotEmpty && args[0] is UserAttributes) {
+        lastUserAttributes = args[0] as UserAttributes;
+      }
+      final user =
+          _currentUser ??
+          User(
+            id: 'mock-user-id',
+            appMetadata: {},
+            userMetadata: {},
+            aud: 'authenticated',
+            createdAt: DateTime.now().toIso8601String(),
+            email: 'user@domain.com',
+          );
+      return Future.value(UserResponse.fromJson({'user': user.toJson()}));
+    }
+
     return super.noSuchMethod(invocation);
   }
 }
@@ -133,6 +154,21 @@ class FakePostgrestTransformBuilder<T> extends Fake
     implements PostgrestTransformBuilder<T> {
   final Future<T> _future;
   FakePostgrestTransformBuilder(this._future);
+
+  @override
+  PostgrestTransformBuilder<Map<String, dynamic>> single() {
+    return FakePostgrestTransformBuilder<Map<String, dynamic>>(
+      _future.then((value) {
+        if (value is List && value.isNotEmpty) {
+          return value.first as Map<String, dynamic>;
+        }
+        if (value is Map) {
+          return value as Map<String, dynamic>;
+        }
+        return <String, dynamic>{};
+      }),
+    );
+  }
 
   @override
   Future<R> then<R>(FutureOr<R> Function(T) onValue, {Function? onError}) {
@@ -158,6 +194,38 @@ class FakePostgrestFilterBuilder<T> extends Fake
   @override
   PostgrestFilterBuilder<T> inFilter(String column, List values) {
     return this;
+  }
+
+  @override
+  PostgrestTransformBuilder<List<Map<String, dynamic>>> select([
+    String columns = '*',
+  ]) {
+    return FakePostgrestTransformBuilder<List<Map<String, dynamic>>>(
+      _future.then((val) {
+        if (val is List) {
+          return List<Map<String, dynamic>>.from(val);
+        }
+        if (val is Map) {
+          return [Map<String, dynamic>.from(val)];
+        }
+        return [];
+      }),
+    );
+  }
+
+  @override
+  PostgrestTransformBuilder<Map<String, dynamic>> single() {
+    return FakePostgrestTransformBuilder<Map<String, dynamic>>(
+      _future.then((val) {
+        if (val is List && val.isNotEmpty) {
+          return val.first as Map<String, dynamic>;
+        }
+        if (val is Map) {
+          return val as Map<String, dynamic>;
+        }
+        return <String, dynamic>{};
+      }),
+    );
   }
 
   @override
@@ -208,6 +276,20 @@ class FakeSupabaseQueryBuilder extends Fake implements SupabaseQueryBuilder {
         : <String, dynamic>{};
     return FakePostgrestFilterBuilder<Map<String, dynamic>>(
       Future.value(insertedMap),
+    );
+  }
+
+  @override
+  PostgrestFilterBuilder<List<Map<String, dynamic>>> delete() {
+    return FakePostgrestFilterBuilder<List<Map<String, dynamic>>>(
+      Future.value([]),
+    );
+  }
+
+  @override
+  PostgrestFilterBuilder<List<Map<String, dynamic>>> update(Object values) {
+    return FakePostgrestFilterBuilder<List<Map<String, dynamic>>>(
+      Future.value([]),
     );
   }
 }

@@ -1,5 +1,5 @@
 import { assertEquals } from "https://deno.land/std@0.168.0/testing/asserts.ts";
-import { computeGolferPrice } from "./pricing_helper.ts";
+import { computeGolferPrice, computePriceFromPercentile } from "./pricing_helper.ts";
 
 Deno.test("Pricing Helper - Zero Data Default", () => {
   const zeroDataGolfer = {
@@ -89,3 +89,24 @@ Deno.test("Pricing Helper - Denominator Guards", () => {
   assertEquals(result.isZeroData, false);
   assertEquals(result.combinedScore >= 0.0 && result.combinedScore <= 1.0, true);
 });
+
+Deno.test("Pricing Helper - computePriceFromPercentile distribution", () => {
+  // Zero data case returns minimum price 12.00
+  assertEquals(computePriceFromPercentile(0.5, true), 12.00);
+
+  // Top 1% (p=1.0) returns max price 38.00
+  assertEquals(computePriceFromPercentile(1.0, false), 38.00);
+
+  // Top 5% (p=0.95) returns ~37.55
+  assertEquals(computePriceFromPercentile(0.95, false), 37.55);
+
+  // Top 20% (11-33% tier, p=0.80) returns 31.98
+  assertEquals(computePriceFromPercentile(0.80, false), 31.98);
+
+  // Top 50% (33-66% tier, p=0.50) returns 16.94
+  assertEquals(computePriceFromPercentile(0.50, false), 16.94);
+
+  // Bottom 0% (p=0.0) returns min price 12.00
+  assertEquals(computePriceFromPercentile(0.0, false), 12.00);
+});
+
