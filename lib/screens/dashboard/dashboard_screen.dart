@@ -157,8 +157,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           return !isLocked;
         });
 
+    // Check if tournament field is unfinalized
+    final bool isFieldUnfinalized =
+        activeTournament != null &&
+        activeTournament.status != 'COMPLETED' &&
+        golfers.isEmpty;
+
     // Check if user has any editable golfers (draft is open or roster has at least one unlocked golfer)
     final showEditBanner =
+        !isFieldUnfinalized &&
         activeTournament != null &&
         activeTournament.status != 'COMPLETED' &&
         (!isTeamLocked ||
@@ -251,6 +258,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 const SizedBox(height: AppSpacing.md),
               ],
 
+              // Primary Lock / Field Status Banner (Directly under Tournament Header)
+              if (isFieldUnfinalized) ...[
+                _buildBanner(
+                  text:
+                      'The tournament field has not been finalized yet. Please check back soon!',
+                  bgColor: AppColors.primary,
+                  textColor: AppColors.primary,
+                  icon: Icons.info_outline_rounded,
+                ),
+                const SizedBox(height: AppSpacing.md),
+              ],
+
               // Next Week's Tournament Teaser Banner
               if (activeTournament?.status == 'COMPLETED' &&
                   isBeforeTransition &&
@@ -302,7 +321,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ],
 
               // Lock Info Banner (informational post-lock/during draft)
-              if (showEditBanner) ...[
+              if (!isFieldUnfinalized && showEditBanner) ...[
                 _buildBanner(
                   text: isTeamLocked
                       ? 'Tournament has started! You can still edit golfers who have not teed off yet.'
@@ -383,6 +402,51 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       }
                       return false;
                     }).length;
+
+                    if (golfersList.isEmpty) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          BbmCard(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.md,
+                                vertical: AppSpacing.xl,
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(
+                                    Icons.hourglass_empty_rounded,
+                                    size: 48,
+                                    color: AppColors.statusScheduledText,
+                                  ),
+                                  const SizedBox(height: AppSpacing.sm),
+                                  Text(
+                                    'TOURNAMENT FIELD PENDING',
+                                    style: theme.textTheme.titleMedium
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.textPrimary,
+                                          letterSpacing: 0.5,
+                                        ),
+                                  ),
+                                  const SizedBox(height: AppSpacing.xs),
+                                  Text(
+                                    'The golfer roster for ${activeTournament.name} is currently being finalized by PGA Tour. Drafting will open as soon as the field is available.',
+                                    textAlign: TextAlign.center,
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.md),
+                        ],
+                      );
+                    }
 
                     if (isTeamLocked) {
                       return Column(

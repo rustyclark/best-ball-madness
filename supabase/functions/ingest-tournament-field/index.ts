@@ -396,6 +396,23 @@ serve(async (req) => {
       }));
     }
 
+    // Check if tournament field is finalized on ESPN
+    if (competitors.length === 0) {
+      console.log(`Tournament field not finalized yet on ESPN for event ${espnEventId} (${name}). Skipping field ingestion & pricing until next hourly run.`)
+      return new Response(
+        JSON.stringify({
+          message: "Tournament field has not been finalized yet on ESPN. Please check back soon.",
+          tournament: tournament.name,
+          golfers_ingested: 0,
+          field_finalized: false,
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        }
+      )
+    }
+
     // 7. Clean up non-entrants: delete any tournament_golfers for this tournament that were not in the fetched field
     const activeTgIds = results.map(r => r.tournament_golfer_id)
     if (activeTgIds.length > 0) {
@@ -445,6 +462,7 @@ serve(async (req) => {
         tournament: tournament.name,
         golfers_ingested: results.length,
         golfers_active: activeTgIds.length,
+        field_finalized: true,
         pricing: pricingMessage
       }), 
       { 

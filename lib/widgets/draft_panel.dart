@@ -318,8 +318,8 @@ class _DraftPanelState extends ConsumerState<DraftPanel> {
               _buildAlert(
                 theme,
                 'Roster incomplete! Draft exactly 4 golfers.',
-                AppColors.statusLiveText,
-                Icons.warning_amber_rounded,
+                AppColors.statusScheduledText,
+                Icons.info_outline_rounded,
               ),
               const SizedBox(height: AppSpacing.xs),
             ],
@@ -370,7 +370,8 @@ class _DraftPanelState extends ConsumerState<DraftPanel> {
                   ],
                 ),
               )
-            else if (isOverBudget || !isRosterComplete || hasWdGolfer)
+            else if (selectedGolfers.isNotEmpty &&
+                (isOverBudget || !isRosterComplete || hasWdGolfer))
               Container(
                 padding: const EdgeInsets.all(AppSpacing.sm),
                 decoration: BoxDecoration(
@@ -402,7 +403,7 @@ class _DraftPanelState extends ConsumerState<DraftPanel> {
                   ],
                 ),
               )
-            else
+            else if (selectedGolfers.isNotEmpty)
               Container(
                 padding: const EdgeInsets.all(AppSpacing.sm),
                 decoration: BoxDecoration(
