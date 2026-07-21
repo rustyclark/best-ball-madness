@@ -1,6 +1,6 @@
 -- Unschedule previous field ingest cron job if it exists
-SELECT cron.unschedule('weekly-tournament-field-ingest');
-SELECT cron.unschedule('hourly-tournament-field-ingest');
+SELECT cron.unschedule(jobid) FROM cron.job WHERE jobname = 'weekly-tournament-field-ingest';
+SELECT cron.unschedule(jobid) FROM cron.job WHERE jobname = 'hourly-tournament-field-ingest';
 
 -- Schedule hourly tournament field ingestion (Runs at top of every hour on Tuesday and Wednesday)
 SELECT cron.schedule(
