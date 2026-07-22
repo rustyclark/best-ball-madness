@@ -21,10 +21,10 @@ export function computeGolferPrice(
 ): { isZeroData: boolean; combinedScore: number } {
   const currentEvents = golfer.events_played ?? 0;
   const priorEvents = golfer.prior_events_played ?? 0;
-  const hasPriorData = priorEvents > 0;
+  const totalEvents = currentEvents + priorEvents;
 
-  // Zero-data flat-fee check
-  if (currentEvents === 0 && !hasPriorData) {
+  // Zero-data / low-data flat-fee check (less than 5 total events played across current and prior seasons)
+  if (totalEvents < 5) {
     return { isZeroData: true, combinedScore: 0.0 };
   }
 

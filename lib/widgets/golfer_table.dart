@@ -224,6 +224,8 @@ class _GolferTableState extends ConsumerState<GolferTable> {
   ) {
     final isGolferLocked =
         widget.isLocked ||
+        golfer.status == 'WD' ||
+        golfer.status == 'MC' ||
         (golfer.teeTime != null &&
             DateTime.now().toUtc().isAfter(
               golfer.teeTime!.subtract(const Duration(minutes: 15)),

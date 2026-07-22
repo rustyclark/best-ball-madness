@@ -211,6 +211,9 @@ class DraftStateNotifier extends Notifier<List<TournamentGolfer>> {
     if (state.length >= 4) {
       throw Exception('Roster is already full');
     }
+    if (golfer.status == 'WD') {
+      throw Exception('Golfer has withdrawn and is unavailable');
+    }
     if (state.any((g) => g.id == golfer.id)) {
       throw Exception('Golfer is already on your roster');
     }
@@ -281,6 +284,9 @@ class DraftStateNotifier extends Notifier<List<TournamentGolfer>> {
     TournamentGolfer oldGolfer,
     TournamentGolfer newGolfer,
   ) async {
+    if (newGolfer.status == 'WD') {
+      throw Exception('Golfer has withdrawn and is unavailable');
+    }
     if (state.any((g) => g.id == newGolfer.id)) {
       throw Exception('Golfer is already on your roster');
     }

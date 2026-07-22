@@ -37,6 +37,7 @@ serve(async (req) => {
       .select(`
         id,
         golfer_profile_id,
+        price_locked,
         golfer_profiles (
           id,
           name,
@@ -159,12 +160,17 @@ serve(async (req) => {
     // 7. Calculate final bell-curve prices and update
     const priceUpdates = []
     for (const gs of golferScores) {
+      const originalTg = tgGolfers.find(tg => tg.id === gs.tgId)
+      if (originalTg && originalTg.price_locked) {
+        continue
+      }
+
       const p = combinedPercentileMap.get(gs.tgId) ?? 0.0
       const price = computePriceFromPercentile(p, gs.isZeroData)
 
       const { error: updateError } = await supabaseClient
         .from('tournament_golfers')
-        .update({ price })
+        .update({ price, price_locked: true })
         .eq('id', gs.tgId)
 
       if (updateError) {
