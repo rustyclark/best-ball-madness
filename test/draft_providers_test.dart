@@ -263,6 +263,33 @@ void main() {
     },
   );
 
+  test(
+    'DraftStateNotifier throws exception when trying to add or replace with a Withdrawn (WD) golfer',
+    () async {
+      final notifier = container.read(draftStateNotifierProvider.notifier);
+
+      final golferWd = TournamentGolfer(
+        id: 'tg-wd',
+        tournamentId: 't-1',
+        golferProfileId: 'gp-wd',
+        price: 20.00,
+        status: 'WD',
+        profile: GolferProfile(
+          id: 'gp-wd',
+          espnId: 'wd',
+          name: 'Withdrawn Golfer',
+        ),
+      );
+
+      // Verify addGolfer throws exception
+      expect(() => notifier.addGolfer(golferWd), throwsException);
+
+      // Verify replaceGolfer throws exception
+      await notifier.addGolfer(golfer1);
+      expect(() => notifier.replaceGolfer(golfer1, golferWd), throwsException);
+    },
+  );
+
   group('Weekly Transition Time Logic Tests', () {
     test('Monday is before transition', () {
       // Monday June 29, 2026 at 12:00 PM UTC

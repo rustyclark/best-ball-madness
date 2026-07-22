@@ -80,7 +80,7 @@ Deno.test("Pricing Helper - Denominator Guards", () => {
     prior_wins: 0,
     prior_top_10s: 0,
     prior_cuts_made: 0,
-    prior_events_played: 1, // Has 1 prior event, so not zero data, but events_played is 0
+    prior_events_played: 5, // Has 5 prior events, so not zero/low data, but events_played is 0
     prior_rounds_played: 0, // 0 rounds
     prior_scoring_avg: 73.0,
   };
@@ -88,6 +88,28 @@ Deno.test("Pricing Helper - Denominator Guards", () => {
   const result = computeGolferPrice(weirdGolfer, 68.0, 74.0, 0.90);
   assertEquals(result.isZeroData, false);
   assertEquals(result.combinedScore >= 0.0 && result.combinedScore <= 1.0, true);
+});
+
+Deno.test("Pricing Helper - Low Data Player Default", () => {
+  const lowDataGolfer = {
+    world_rank: 50,
+    wins: 0,
+    top_10s: 0,
+    cuts_made: 1,
+    events_played: 1,
+    rounds_played: 4,
+    scoring_avg: 70.0,
+    prior_wins: 0,
+    prior_top_10s: 0,
+    prior_cuts_made: 0,
+    prior_events_played: 2,
+    prior_rounds_played: 8,
+    prior_scoring_avg: 71.0,
+  }; // total events = 3 < 5
+
+  const result = computeGolferPrice(lowDataGolfer, 68.0, 74.0, 0.5);
+  assertEquals(result.isZeroData, true);
+  assertEquals(result.combinedScore, 0.0);
 });
 
 Deno.test("Pricing Helper - computePriceFromPercentile distribution", () => {

@@ -413,19 +413,19 @@ serve(async (req) => {
       )
     }
 
-    // 7. Clean up non-entrants: delete any tournament_golfers for this tournament that were not in the fetched field
+    // 7. Clean up non-entrants: mark any tournament_golfers for this tournament that were not in the fetched field as WD (withdrawn)
     const activeTgIds = results.map(r => r.tournament_golfer_id)
     if (activeTgIds.length > 0) {
-      const { error: deleteError } = await supabaseClient
+      const { error: updateError } = await supabaseClient
         .from('tournament_golfers')
-        .delete()
+        .update({ status: 'WD' })
         .eq('tournament_id', tournament.id)
         .not('id', 'in', `(${activeTgIds.join(',')})`)
 
-      if (deleteError) {
-        console.error(`Error cleaning up non-entrants: ${deleteError.message}`)
+      if (updateError) {
+        console.error(`Error cleaning up non-entrants: ${updateError.message}`)
       } else {
-        console.log(`Successfully cleaned up non-entrants for tournament ${tournament.id}`)
+        console.log(`Successfully marked non-entrants as WD for tournament ${tournament.id}`)
       }
     }
 
